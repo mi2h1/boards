@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Check, Loader2, FlaskConical } from 'lucide-react';
 import type { Player, GameSettings, LocalPlayerState } from '../types/game';
-import { TOPIC_LABELS } from '../types/game';
 import { validateWord, normalizeWord } from '../lib/hiragana';
 
 interface WordInputPhaseProps {
   settings: GameSettings;
+  currentTopic: string;
   players: Player[];
   currentPlayerId: string;
   isReady: boolean;
@@ -18,6 +18,7 @@ interface WordInputPhaseProps {
 
 export const WordInputPhase = ({
   settings,
+  currentTopic,
   players,
   currentPlayerId,
   isReady,
@@ -91,7 +92,7 @@ export const WordInputPhase = ({
       <div className="bg-white/10 rounded-xl p-6 text-center">
         <p className="text-white/60 mb-2">お題</p>
         <h2 className="text-3xl font-bold text-white">
-          「{TOPIC_LABELS[settings.topic]}」
+          「{currentTopic}」
         </h2>
         <p className="text-white/60 mt-4">
           {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください

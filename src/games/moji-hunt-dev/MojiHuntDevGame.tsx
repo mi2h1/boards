@@ -7,7 +7,7 @@ import { WordInputPhase } from './components/WordInputPhase';
 import { GamePlayPhase } from './components/GamePlayPhase';
 import { ResultScreen } from './components/ResultScreen';
 import type { LocalPlayerState } from './types/game';
-import { DEFAULT_SETTINGS, TOPIC_LABELS } from './types/game';
+import { DEFAULT_SETTINGS, getRandomTopic } from './types/game';
 
 interface MojiHuntDevGameProps {
   onBack: () => void;
@@ -34,7 +34,6 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
     joinRoom,
     leaveRoom,
     updateGameState,
-    updateSettings,
     addTestPlayer,
   } = useRoom(playerId, playerName);
 
@@ -57,8 +56,12 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
     const playerIds = players.map(p => p.id);
     const shuffledOrder = [...playerIds].sort(() => Math.random() - 0.5);
 
+    // お題をランダムに選出
+    const topic = getRandomTopic();
+
     updateGameState({
       phase: 'word_input',
+      currentTopic: topic,
       turnOrder: shuffledOrder,
       currentTurnPlayerId: shuffledOrder[0],
     });
@@ -145,14 +148,12 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
         isHost={isHost}
         isLoading={isLoading}
         error={error}
-        settings={settings}
         hostId={roomData?.hostId ?? ''}
         playerName={playerName}
         onCreateRoom={createRoom}
         onJoinRoom={joinRoom}
         onLeaveRoom={leaveRoom}
         onStartGame={handleStartGame}
-        onUpdateSettings={updateSettings}
         onBack={handleBack}
         debugMode={debugMode}
         onAddTestPlayer={addTestPlayer}
@@ -184,9 +185,9 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
                 DEBUG
               </span>
             )}
-            {roomCode && (
+            {gameState?.currentTopic && (
               <span className="text-white/60 text-sm">
-                お題: {TOPIC_LABELS[settings.topic]}
+                お題: {gameState.currentTopic}
               </span>
             )}
           </div>
@@ -195,6 +196,7 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
         {phase === 'word_input' && gameState && (
           <WordInputPhase
             settings={settings}
+            currentTopic={gameState.currentTopic}
             players={players}
             currentPlayerId={playerId ?? ''}
             isReady={localState !== null}
@@ -240,6 +242,7 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
               updateGameState({
                 phase: 'waiting',
                 players: resetPlayers,
+                currentTopic: '',
                 currentTurnPlayerId: null,
                 turnOrder: [],
                 usedCharacters: [],
