@@ -118,11 +118,9 @@ export const GamePlayPhase = ({
         attackHistory: newAttackHistory,
       });
 
-      // さらに1.5秒後にターン処理
+      // さらに1.5秒後にターン処理（currentAttackのクリアも含む）
       setTimeout(() => {
         processAttackResult(char, allHits);
-        // currentAttackをクリア
-        updateGameState({ currentAttack: null });
       }, 1500);
     }, 1500);
   };
@@ -176,6 +174,7 @@ export const GamePlayPhase = ({
         players: updatedPlayers,
         phase: 'game_end',
         winnerId: remainingPlayers[0]?.id ?? null,
+        currentAttack: null,
       });
       return;
     }
@@ -206,6 +205,7 @@ export const GamePlayPhase = ({
       players: updatedPlayers,
       currentTurnPlayerId: nextPlayerId,
       lastAttackHadHit: nextLastAttackHadHit,
+      currentAttack: null,
     });
   };
 
