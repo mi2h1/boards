@@ -1,0 +1,147 @@
+import { useState } from 'react';
+import { Gamepad2 } from 'lucide-react';
+import { usePlayer } from './shared/hooks/usePlayer';
+import { AoaGame } from './games/aoa/AoaGame';
+
+type GameType = 'none' | 'aoa' | 'moji-guess';
+
+function App() {
+  const { playerName, setPlayerName, hasName, isLoading } = usePlayer();
+  const [nameInput, setNameInput] = useState('');
+  const [selectedGame, setSelectedGame] = useState<GameType>('none');
+
+  // ローディング中
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="text-gray-400">読み込み中...</div>
+      </div>
+    );
+  }
+
+  // プレイヤー名入力画面
+  if (!hasName) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center p-4">
+        <div className="bg-slate-800/95 rounded-xl p-8 max-w-md w-full">
+          <div className="text-center mb-8">
+            <Gamepad2 className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-2">lche-board</h1>
+            <p className="text-slate-400">オンラインボードゲーム</p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-slate-300 text-sm mb-2">
+                プレイヤー名を入力
+              </label>
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="名前を入力..."
+                className="w-full px-4 py-3 bg-slate-700 text-white rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                maxLength={20}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && nameInput.trim()) {
+                    setPlayerName(nameInput);
+                  }
+                }}
+              />
+            </div>
+            <button
+              onClick={() => setPlayerName(nameInput)}
+              disabled={!nameInput.trim()}
+              className="w-full px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600
+                hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600
+                rounded-lg text-white font-bold transition-all"
+            >
+              はじめる
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ゲームが選択されている場合
+  if (selectedGame === 'aoa') {
+    return <AoaGame onBack={() => setSelectedGame('none')} />;
+  }
+
+  // ゲーム選択画面
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* ヘッダー */}
+        <header className="text-center py-8">
+          <Gamepad2 className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+          <h1 className="text-2xl font-bold text-white mb-1">lche-board</h1>
+          <p className="text-slate-400">
+            ようこそ、<span className="text-indigo-300">{playerName}</span> さん
+          </p>
+        </header>
+
+        {/* ゲーム一覧 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* アトランティスの深淵 */}
+          <div className="bg-slate-800/80 rounded-xl overflow-hidden hover:ring-2 hover:ring-cyan-500 transition-all">
+            <div
+              className="h-40 bg-cover bg-center"
+              style={{ backgroundImage: 'url(/boards/images/bg_aoa.jpg)' }}
+            >
+              <div className="h-full bg-blue-950/50 flex items-center justify-center">
+                <img
+                  src="/boards/images/vec_logo_aoa_w.svg"
+                  alt="アトランティスの深淵"
+                  className="h-12"
+                  style={{ filter: 'brightness(0) invert(1)' }}
+                />
+              </div>
+            </div>
+            <div className="p-4">
+              <h2 className="text-lg font-bold text-white mb-2">アトランティスの深淵</h2>
+              <p className="text-slate-400 text-sm mb-4">
+                深海の遺跡を探索するチキンレースゲーム。宝石を集めて帰還するか、さらに奥へ進むか？
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedGame('aoa')}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-600
+                    hover:from-cyan-600 hover:to-teal-700 rounded-lg text-white font-bold transition-all"
+                >
+                  遊ぶ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 文字ゲス（準備中） */}
+          <div className="bg-slate-800/80 rounded-xl overflow-hidden opacity-60">
+            <div className="h-40 bg-gradient-to-br from-pink-600 to-orange-500 flex items-center justify-center">
+              <span className="text-4xl font-bold text-white">文字ゲス</span>
+            </div>
+            <div className="p-4">
+              <h2 className="text-lg font-bold text-white mb-2">文字ゲス</h2>
+              <p className="text-slate-400 text-sm mb-4">
+                ひらがなで秘密の言葉を当て合うパーティーゲーム。最後まで残った人の勝ち！
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled
+                  className="flex-1 px-4 py-2 bg-gray-600 rounded-lg text-gray-400 font-bold cursor-not-allowed"
+                >
+                  準備中...
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
