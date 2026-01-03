@@ -46,6 +46,7 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
 
   // ゲーム開始時のトランジション表示
   const [showTransition, setShowTransition] = useState(false);
+  const [isStartingGame, setIsStartingGame] = useState(false);
   const prevPhaseRef = useRef<string | null>(null);
 
   const gameState = roomData?.gameState;
@@ -62,23 +63,29 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
     prevPhaseRef.current = phase;
   }, [phase]);
 
-  // ゲーム開始処理
+  // ゲーム開始処理（フェードアウト付き）
   const handleStartGame = () => {
     if (!isHost || !gameState) return;
 
-    // ターン順をシャッフル
-    const playerIds = players.map(p => p.id);
-    const shuffledOrder = [...playerIds].sort(() => Math.random() - 0.5);
+    // まずロビーをフェードアウト
+    setIsStartingGame(true);
 
-    // お題をランダムに選出
-    const topic = getRandomTopic();
+    // フェードアウト完了後にゲーム状態を更新
+    setTimeout(() => {
+      // ターン順をシャッフル
+      const playerIds = players.map(p => p.id);
+      const shuffledOrder = [...playerIds].sort(() => Math.random() - 0.5);
 
-    updateGameState({
-      phase: 'word_input',
-      currentTopic: topic,
-      turnOrder: shuffledOrder,
-      currentTurnPlayerId: shuffledOrder[0],
-    });
+      // お題をランダムに選出
+      const topic = getRandomTopic();
+
+      updateGameState({
+        phase: 'word_input',
+        currentTopic: topic,
+        turnOrder: shuffledOrder,
+        currentTurnPlayerId: shuffledOrder[0],
+      });
+    }, 400); // フェードアウト時間
   };
 
   // 言葉入力完了処理
@@ -171,6 +178,7 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
         onBack={handleBack}
         debugMode={debugMode}
         onAddTestPlayer={addTestPlayer}
+        isFadingOut={isStartingGame}
       />
     );
   }
