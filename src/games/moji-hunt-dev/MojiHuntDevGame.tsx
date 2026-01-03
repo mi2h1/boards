@@ -54,16 +54,35 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
   const players = gameState?.players ?? [];
   const settings = gameState?.settings ?? DEFAULT_SETTINGS;
   const phase = gameState?.phase ?? 'waiting';
+  const currentTopic = gameState?.currentTopic ?? '';
+
+  const prevTopicRef = useRef<string | null>(null);
 
   // フェーズ変更を監視（他プレイヤー用）
   useEffect(() => {
     // 他プレイヤーが waiting → word_input の遷移を検知した時
     if (prevPhaseRef.current === 'waiting' && phase === 'word_input' && !showTransition) {
-      setTransitionTopic(gameState?.currentTopic ?? null);
+      setTransitionTopic(currentTopic || null);
       setShowTransition(true);
     }
     prevPhaseRef.current = phase;
-  }, [phase, gameState?.currentTopic, showTransition]);
+  }, [phase, currentTopic, showTransition]);
+
+  // お題変更を監視（お題チェンジ投票で変わった時、他プレイヤー用）
+  useEffect(() => {
+    // word_input中にお題が変わった時（自分がトランジション表示中でなければ）
+    if (
+      phase === 'word_input' &&
+      prevTopicRef.current !== null &&
+      prevTopicRef.current !== currentTopic &&
+      currentTopic &&
+      !showTransition
+    ) {
+      setTransitionTopic(currentTopic);
+      setShowTransition(true);
+    }
+    prevTopicRef.current = currentTopic;
+  }, [currentTopic, phase, showTransition]);
 
   // ゲーム開始処理（フェードアウト付き）
   const handleStartGame = () => {
