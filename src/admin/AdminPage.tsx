@@ -7,18 +7,19 @@ interface AdminPageProps {
   onBack: () => void;
 }
 
-// ひらがな46文字（濁点・半濁点なし）
-const HIRAGANA_CHARS = [
-  'あ', 'い', 'う', 'え', 'お',
-  'か', 'き', 'く', 'け', 'こ',
-  'さ', 'し', 'す', 'せ', 'そ',
-  'た', 'ち', 'つ', 'て', 'と',
-  'な', 'に', 'ぬ', 'ね', 'の',
-  'は', 'ひ', 'ふ', 'へ', 'ほ',
-  'ま', 'み', 'む', 'め', 'も',
-  'や', 'ゆ', 'よ',
-  'ら', 'り', 'る', 'れ', 'ろ',
-  'わ', 'を', 'ん',
+// ひらがな50音グリッド（10列×5行、空きはnull）
+// 右から左: わ・ら・や・ま・は・な・た・さ・か・あ の順
+const HIRAGANA_GRID: (string | null)[] = [
+  // あ段
+  'わ', 'ら', 'や', 'ま', 'は', 'な', 'た', 'さ', 'か', 'あ',
+  // い段
+  'を', 'り', null, 'み', 'ひ', 'に', 'ち', 'し', 'き', 'い',
+  // う段
+  'ん', 'る', 'ゆ', 'む', 'ふ', 'ぬ', 'つ', 'す', 'く', 'う',
+  // え段
+  null, 'れ', null, 'め', 'へ', 'ね', 'て', 'せ', 'け', 'え',
+  // お段
+  null, 'ろ', 'よ', 'も', 'ほ', 'の', 'と', 'そ', 'こ', 'お',
 ];
 
 const formatTime = (timestamp: number) => {
@@ -146,31 +147,42 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
             {room.details.eliminatedCount !== undefined && room.details.eliminatedCount > 0 && (
               <div>脱落: <span className="text-red-400">{room.details.eliminatedCount}人</span></div>
             )}
-            {/* 文字パネル */}
-            {room.phase === 'playing' && room.details.usedCharacters && (
-              <div className="mt-2">
-                <div className="text-xs text-slate-500 mb-1">
-                  使用済み: {room.details.usedCharacters.length}/46
+            {/* 文字パネル（50音配置） */}
+            {room.phase === 'playing' && room.details.usedCharacters && (() => {
+              const usedChars = room.details.usedCharacters || [];
+              const lastChar = usedChars.length > 0 ? usedChars[usedChars.length - 1] : null;
+              return (
+                <div className="mt-2">
+                  <div className="text-xs text-slate-500 mb-1">
+                    使用済み: {usedChars.length}/46
+                  </div>
+                  <div className="grid gap-px" style={{ gridTemplateColumns: 'repeat(10, 1fr)', width: 'fit-content' }}>
+                    {HIRAGANA_GRID.map((char, i) => {
+                      if (char === null) {
+                        return <span key={i} className="w-3 h-3" />;
+                      }
+                      const isUsed = usedChars.includes(char);
+                      const isLast = char === lastChar;
+                      return (
+                        <span
+                          key={i}
+                          className={`w-3 h-3 text-[8px] flex items-center justify-center ${
+                            isLast
+                              ? 'text-yellow-400 font-bold'
+                              : isUsed
+                                ? 'text-slate-600'
+                                : 'text-pink-400'
+                          }`}
+                          title={char}
+                        >
+                          {isLast ? char : '■'}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-0.5">
-                  {HIRAGANA_CHARS.map(char => {
-                    const isUsed = room.details.usedCharacters?.includes(char);
-                    return (
-                      <span
-                        key={char}
-                        className={`w-4 h-4 text-[10px] flex items-center justify-center rounded ${
-                          isUsed
-                            ? 'bg-slate-600 text-slate-400'
-                            : 'bg-slate-700 text-white'
-                        }`}
-                      >
-                        {char}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
