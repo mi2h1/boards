@@ -15,7 +15,9 @@
 
       if (gamePath) {
         // パスをクエリパラメータとして渡してリダイレクト
-        window.location.replace('/boards/?p=' + gamePath + search + hash);
+        // search が ?foo=bar の場合、&foo=bar に変換して連結
+        const extraParams = search ? '&' + search.slice(1) : '';
+        window.location.replace('/boards/?p=' + gamePath + extraParams + hash);
       } else {
         window.location.replace('/boards/' + search + hash);
       }
