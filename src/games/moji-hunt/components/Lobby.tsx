@@ -257,18 +257,20 @@ export const Lobby = ({
               <input
                 ref={roomCodeInputRef}
                 type="text"
-                inputMode="text"
+                inputMode="url"
                 enterKeyHint="go"
+                lang="en"
                 onChange={(e) => {
-                  // 表示用に大文字変換のみ（フィルタリングは送信時）
-                  const raw = e.target.value;
-                  const upper = raw.toUpperCase();
-                  if (raw !== upper) {
-                    e.target.value = upper;
-                  }
-                  // 英数字のみカウントして4文字かチェック
-                  const filtered = upper.replace(/[^A-Z0-9]/g, '');
+                  // ボタン有効化判定のみ（入力値は変更しない）
+                  const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
                   setCanJoin(filtered.length >= 4);
+                }}
+                onBlur={(e) => {
+                  // フォーカスが外れた時に整形
+                  const raw = e.target.value;
+                  const filtered = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+                  e.target.value = filtered;
+                  setCanJoin(filtered.length === 4);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
