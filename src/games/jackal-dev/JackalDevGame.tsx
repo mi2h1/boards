@@ -161,22 +161,33 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     };
 
     // プレイヤーのライフを減らす
+    // Firebaseはundefinedを許可しないので、eliminatedAtは脱落時のみ設定
     const updatedPlayers = players.map(p => {
+      // 既存のeliminatedAtを除外してコピー
+      const { eliminatedAt: _, ...playerWithoutEliminatedAt } = p;
+
       if (p.id === loserId) {
         const newLife = p.life - 1;
         const isEliminated = newLife <= 0;
-        // Firebaseはundefinedを許可しないので、eliminatedAtは脱落時のみ設定
-        const updatedPlayer = {
-          ...p,
+        if (isEliminated) {
+          return {
+            ...playerWithoutEliminatedAt,
+            life: newLife,
+            isEliminated,
+            eliminatedAt: gameState.round,
+          };
+        }
+        return {
+          ...playerWithoutEliminatedAt,
           life: newLife,
           isEliminated,
         };
-        if (isEliminated) {
-          (updatedPlayer as typeof p).eliminatedAt = gameState.round;
-        }
-        return updatedPlayer;
       }
-      return p;
+      // 脱落済みプレイヤーはeliminatedAtを保持
+      if (p.eliminatedAt !== undefined) {
+        return { ...playerWithoutEliminatedAt, eliminatedAt: p.eliminatedAt };
+      }
+      return playerWithoutEliminatedAt;
     });
 
     // 山札を更新（?カード用に引いた場合）
