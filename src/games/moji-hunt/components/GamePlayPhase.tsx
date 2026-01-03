@@ -48,9 +48,16 @@ export const GamePlayPhase = ({
     }
   }, [currentAttack?.phase, currentAttack?.hits]);
 
-  // 古いcurrentAttackを自動クリア（10秒以上経過したもの）
+  // 古いcurrentAttackを自動クリア（10秒以上経過 または タイムスタンプなし）
   useEffect(() => {
-    if (!currentAttack?.timestamp) return;
+    if (!currentAttack) return;
+
+    // タイムスタンプがない場合は即座にクリア（古いデータ）
+    if (!currentAttack.timestamp) {
+      console.log('Clearing currentAttack without timestamp');
+      updateGameState({ currentAttack: null });
+      return;
+    }
 
     const checkStale = () => {
       const age = Date.now() - currentAttack.timestamp;
@@ -66,7 +73,7 @@ export const GamePlayPhase = ({
     // 定期的にチェック
     const interval = setInterval(checkStale, 2000);
     return () => clearInterval(interval);
-  }, [currentAttack?.timestamp, updateGameState]);
+  }, [currentAttack, updateGameState]);
 
   // デバッグモード用: どのプレイヤーを操作しているか
   const [debugControlledPlayerId, setDebugControlledPlayerId] = useState<string | null>(null);
