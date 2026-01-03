@@ -17,10 +17,17 @@ const cleanupOldRooms = async () => {
 
     const deletePromises: Promise<void>[] = [];
     for (const [code, room] of Object.entries(rooms)) {
-      const roomData = room as { createdAt?: number; gameState?: { players?: unknown[] } };
+      const roomData = room as { createdAt?: number; gameState?: { players?: unknown[] | Record<string, unknown> } };
       const createdAt = roomData.createdAt || 0;
       const players = roomData.gameState?.players;
-      const playerCount = Array.isArray(players) ? players.length : 0;
+
+      // Firebaseは配列をオブジェクトに変換することがあるので両方対応
+      let playerCount = 0;
+      if (Array.isArray(players)) {
+        playerCount = players.length;
+      } else if (players && typeof players === 'object') {
+        playerCount = Object.keys(players).length;
+      }
 
       // 24時間以上前 または プレイヤーが0人のルームを削除
       if (now - createdAt > maxAge || playerCount === 0) {
@@ -30,7 +37,7 @@ const cleanupOldRooms = async () => {
 
     if (deletePromises.length > 0) {
       await Promise.all(deletePromises);
-      console.log(`Cleaned up ${deletePromises.length} old moji-guess rooms`);
+      console.log(`Cleaned up ${deletePromises.length} old moji-hunt rooms`);
     }
   } catch (err) {
     console.error('Cleanup old rooms error:', err);
@@ -59,6 +66,11 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // マウント時に古いルームをクリーンアップ
+  useEffect(() => {
+    cleanupOldRooms();
+  }, []);
 
   // ルームのリアルタイム監視
   useEffect(() => {
