@@ -45,7 +45,8 @@ export const GameStartTransition = ({ topic, onComplete }: GameStartTransitionPr
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-pink-900 to-orange-900 transition-opacity duration-300 ${
         fadeOut ? 'opacity-0' : 'opacity-100'
-      }`}
+      } ${phase === 'announce' ? 'cursor-pointer' : ''}`}
+      onClick={phase === 'announce' ? handleDismiss : undefined}
     >
       {phase === 'loading' ? (
         // ローディング画面
@@ -56,8 +57,7 @@ export const GameStartTransition = ({ topic, onComplete }: GameStartTransitionPr
       ) : (
         // お題アナウンス
         <div
-          className={`text-center cursor-pointer transition-opacity duration-300 ${contentFade ? 'opacity-0' : 'opacity-100'}`}
-          onClick={handleDismiss}
+          className={`text-center transition-opacity duration-300 ${contentFade ? 'opacity-0' : 'opacity-100'}`}
         >
           <p className="text-white/60 text-lg mb-4">今回のお題は...</p>
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-12 py-8 mb-6">
