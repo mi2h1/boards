@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ref, set, onValue, off, update, remove, get, onDisconnect } from 'firebase/database';
 import { db } from '../../../lib/firebase';
 import type { GameState, Player, TrapType, RuleSet, RuleSetType } from '../types/game';
@@ -103,58 +103,67 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const presenceRef = useRef<ReturnType<typeof ref> | null>(null);
 
   // マウント時に古いルームをクリーンアップ
   useEffect(() => {
     cleanupOldRooms();
   }, []);
 
-  // プレゼンス（接続状態）の設定
+  // プレゼンス（接続状態）の設定とホスト切断時の部屋削除
   useEffect(() => {
     if (!roomCode || !playerId) {
-      // クリーンアップ
-      if (presenceRef.current) {
-        remove(presenceRef.current);
-        presenceRef.current = null;
-      }
       return;
     }
 
-    // presenceを設定
+    const roomRef = ref(db, `rooms/${roomCode}`);
     const myPresenceRef = ref(db, `rooms/${roomCode}/presence/${playerId}`);
-    presenceRef.current = myPresenceRef;
 
-    // オンラインとしてマーク
-    set(myPresenceRef, true);
+    const setupPresence = async () => {
+      // オンラインとしてマーク
+      await set(myPresenceRef, true);
 
-    // 切断時に自動でpresenceを削除
-    onDisconnect(myPresenceRef).remove();
+      // 切断時に自動でpresenceを削除
+      await onDisconnect(myPresenceRef).remove();
+
+      // ホストの場合は切断時に部屋全体を削除
+      const roomSnapshot = await get(roomRef);
+      if (roomSnapshot.exists()) {
+        const room = roomSnapshot.val();
+        if (room.hostId === playerId) {
+          await onDisconnect(roomRef).remove();
+        }
+      }
+    };
+
+    setupPresence();
 
     return () => {
       // コンポーネントアンマウント時にpresenceを削除
       remove(myPresenceRef);
-      presenceRef.current = null;
+      // onDisconnectをキャンセル
+      onDisconnect(myPresenceRef).cancel();
+      onDisconnect(roomRef).cancel();
     };
   }, [roomCode, playerId]);
 
-  // presenceの変更を監視してプレイヤーを削除
+  // presenceの変更を監視してプレイヤーを削除・ホスト引き継ぎ
   useEffect(() => {
-    if (!roomCode) return;
+    if (!roomCode || !playerId) return;
 
     const presenceListRef = ref(db, `rooms/${roomCode}/presence`);
+    const roomRef = ref(db, `rooms/${roomCode}`);
 
     onValue(presenceListRef, async (snapshot) => {
       const presenceData = snapshot.val() || {};
       const onlinePlayerIds = Object.keys(presenceData);
 
       // 現在のルームデータを取得
-      const roomRef = ref(db, `rooms/${roomCode}`);
       const roomSnapshot = await get(roomRef);
       if (!roomSnapshot.exists()) return;
 
       const room = roomSnapshot.val();
       const players = normalizeArray<Player>(room.gameState?.players);
+      const currentHostId = room.hostId;
 
       // オフラインのプレイヤーを特定
       const offlinePlayers = players.filter(p => !onlinePlayerIds.includes(p.id));
@@ -168,9 +177,22 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
           await remove(roomRef);
         } else {
           // プレイヤーリストを更新
-          await update(ref(db, `rooms/${roomCode}/gameState`), {
-            players: remainingPlayers,
-          });
+          const updates: Record<string, unknown> = {
+            'gameState/players': remainingPlayers,
+          };
+
+          // ホストがオフラインになった場合は引き継ぎ
+          if (!onlinePlayerIds.includes(currentHostId)) {
+            const newHostId = remainingPlayers[0].id;
+            updates['hostId'] = newHostId;
+
+            // 自分が新しいホストになった場合、onDisconnectで部屋削除を設定
+            if (newHostId === playerId) {
+              await onDisconnect(roomRef).remove();
+            }
+          }
+
+          await update(roomRef, updates);
         }
       }
     });
@@ -178,7 +200,7 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
     return () => {
       off(presenceListRef);
     };
-  }, [roomCode]);
+  }, [roomCode, playerId]);
 
   // ルームのリアルタイム監視
   useEffect(() => {
