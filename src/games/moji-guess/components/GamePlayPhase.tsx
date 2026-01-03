@@ -85,7 +85,7 @@ export const GamePlayPhase = ({
     updateGameState({
       usedCharacters: newUsedCharacters,
       attackHistory: newAttackHistory,
-      lastAttackHadHit: allHits.length > 0,
+      // lastAttackHadHitはprocessAttackResult内で適切に設定する
     });
 
     // 少し待ってからターンを進める
