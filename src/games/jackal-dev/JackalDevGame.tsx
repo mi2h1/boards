@@ -2,8 +2,12 @@ import { useEffect } from 'react';
 import { usePlayer } from '../../shared/hooks/usePlayer';
 import { useRoom } from './hooks/useRoom';
 import { Lobby } from './components/Lobby';
-import { createGameDeck } from './lib/cards';
+import { GamePlayPhase } from './components/GamePlayPhase';
+import { JudgmentPhase } from './components/JudgmentPhase';
+import { GameEndPhase } from './components/GameEndPhase';
+import { createGameDeck, calculateTotal } from './lib/cards';
 import { DEFAULT_SETTINGS } from './types/game';
+import type { JudgmentResult, Card } from './types/game';
 
 interface JackalDevGameProps {
   onBack: () => void;
@@ -50,18 +54,18 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     const shuffledOrder = [...playerIds].sort(() => Math.random() - 0.5);
 
     // 各プレイヤーにカードを配る
-    const dealtCards: Record<string, typeof deck[0]> = {};
+    const dealtCards: Record<string, Card> = {};
     const remainingDeck = [...deck];
 
-    for (const playerId of playerIds) {
+    for (const pid of playerIds) {
       const card = remainingDeck.pop();
       if (card) {
-        dealtCards[playerId] = card;
+        dealtCards[pid] = card;
       }
     }
 
     updateGameState({
-      phase: 'round_start',
+      phase: 'declaring',
       deck: remainingDeck,
       dealtCards,
       turnOrder: shuffledOrder,
@@ -70,6 +74,197 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
       currentDeclaredValue: null,
       lastDeclarerId: null,
       judgmentResult: null,
+    });
+  };
+
+  // 数字を宣言
+  const handleDeclare = (value: number) => {
+    if (!gameState || !playerId) return;
+    if (gameState.currentTurnPlayerId !== playerId) return;
+
+    const currentIndex = gameState.turnOrder.indexOf(playerId);
+
+    // 次のプレイヤーを探す（脱落していないプレイヤー）
+    let nextIndex = (currentIndex + 1) % gameState.turnOrder.length;
+    let attempts = 0;
+    while (attempts < gameState.turnOrder.length) {
+      const nextPlayerId = gameState.turnOrder[nextIndex];
+      const nextPlayer = players.find(p => p.id === nextPlayerId);
+      if (nextPlayer && !nextPlayer.isEliminated) {
+        break;
+      }
+      nextIndex = (nextIndex + 1) % gameState.turnOrder.length;
+      attempts++;
+    }
+
+    updateGameState({
+      currentDeclaredValue: value,
+      lastDeclarerId: playerId,
+      currentTurnPlayerId: gameState.turnOrder[nextIndex],
+    });
+  };
+
+  // ジャッカルを宣言
+  const handleCallJackal = () => {
+    if (!gameState || !playerId) return;
+    if (gameState.currentTurnPlayerId !== playerId) return;
+    if (gameState.currentDeclaredValue === null) return;
+
+    // ?カードがある場合は山札から1枚引く
+    let mysteryDrawnCard: Card | null = null;
+    const hasMystery = Object.values(gameState.dealtCards).some(c => c.type === 'mystery');
+    if (hasMystery && gameState.deck.length > 0) {
+      mysteryDrawnCard = gameState.deck[gameState.deck.length - 1];
+    }
+
+    // 合計値を計算
+    const result = calculateTotal(gameState.dealtCards, mysteryDrawnCard);
+
+    // 判定
+    const declaredValue = gameState.currentDeclaredValue;
+    const lastDeclarerId = gameState.lastDeclarerId!;
+
+    let loserId: string;
+    let reason: 'over' | 'jackal';
+
+    if (declaredValue > result.totalValue) {
+      // 宣言が合計を超えている → 宣言者の負け
+      loserId = lastDeclarerId;
+      reason = 'over';
+    } else {
+      // 宣言が合計以下 → ジャッカル宣言者の負け
+      loserId = playerId;
+      reason = 'jackal';
+    }
+
+    const loser = players.find(p => p.id === loserId);
+
+    // 判定結果を作成
+    const judgmentResult: JudgmentResult = {
+      declaredValue,
+      totalValue: result.totalValue,
+      loserId,
+      loserName: loser?.name ?? '不明',
+      reason,
+      cardDetails: result.cardValues.map(cv => ({
+        playerId: cv.playerId,
+        playerName: players.find(p => p.id === cv.playerId)?.name ?? '不明',
+        card: cv.card,
+        resolvedValue: cv.resolvedValue,
+      })),
+      mysteryCard: result.mysteryResolvedCard ?? undefined,
+      hasDouble: result.hasDouble,
+      hasMaxZero: result.hasMaxZero,
+      maxValue: result.maxValue,
+    };
+
+    // プレイヤーのライフを減らす
+    const updatedPlayers = players.map(p => {
+      if (p.id === loserId) {
+        const newLife = p.life - 1;
+        return {
+          ...p,
+          life: newLife,
+          isEliminated: newLife <= 0,
+          eliminatedAt: newLife <= 0 ? gameState.round : undefined,
+        };
+      }
+      return p;
+    });
+
+    // 山札を更新（?カード用に引いた場合）
+    const updatedDeck = hasMystery && mysteryDrawnCard
+      ? gameState.deck.slice(0, -1)
+      : gameState.deck;
+
+    updateGameState({
+      phase: 'round_end',
+      players: updatedPlayers,
+      deck: updatedDeck,
+      judgmentResult,
+    });
+  };
+
+  // 次のラウンドへ
+  const handleNextRound = () => {
+    if (!gameState) return;
+
+    // 生き残っているプレイヤーを確認
+    const activePlayers = gameState.players.filter(p => !p.isEliminated);
+
+    // 勝者が決定した場合
+    if (activePlayers.length <= 1) {
+      updateGameState({
+        phase: 'game_end',
+        winnerId: activePlayers[0]?.id ?? null,
+      });
+      return;
+    }
+
+    // 新しいラウンドを開始
+    const deck = createGameDeck();
+    const dealtCards: Record<string, Card> = {};
+    const remainingDeck = [...deck];
+
+    // アクティブプレイヤーにのみカードを配る
+    for (const player of activePlayers) {
+      const card = remainingDeck.pop();
+      if (card) {
+        dealtCards[player.id] = card;
+      }
+    }
+
+    // ターン順を更新（脱落者を除外）
+    const newTurnOrder = gameState.turnOrder.filter(id =>
+      activePlayers.some(p => p.id === id)
+    );
+
+    // 負けた人から開始（いなければ最初の人）
+    const lastLoserId = gameState.judgmentResult?.loserId;
+    let startIndex = 0;
+    if (lastLoserId && newTurnOrder.includes(lastLoserId)) {
+      startIndex = newTurnOrder.indexOf(lastLoserId);
+    }
+    const startPlayerId = newTurnOrder[startIndex];
+
+    updateGameState({
+      phase: 'declaring',
+      deck: remainingDeck,
+      dealtCards,
+      turnOrder: newTurnOrder,
+      currentTurnPlayerId: startPlayerId,
+      round: gameState.round + 1,
+      currentDeclaredValue: null,
+      lastDeclarerId: null,
+      judgmentResult: null,
+    });
+  };
+
+  // ロビーに戻る（ゲーム終了時）
+  const handleBackToLobby = () => {
+    if (!gameState) return;
+
+    // プレイヤーのライフをリセット
+    const resetPlayers = gameState.players.map(p => ({
+      ...p,
+      life: settings.initialLife,
+      isEliminated: false,
+      eliminatedAt: undefined,
+      cardId: null,
+    }));
+
+    updateGameState({
+      phase: 'waiting',
+      players: resetPlayers,
+      deck: [],
+      dealtCards: {},
+      round: 1,
+      currentTurnPlayerId: null,
+      turnOrder: [],
+      currentDeclaredValue: null,
+      lastDeclarerId: null,
+      judgmentResult: null,
+      winnerId: null,
     });
   };
 
@@ -106,38 +301,39 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     );
   }
 
-  // ゲーム画面（TODO: 実装予定）
+  // ゲーム終了画面
+  if (gameState.phase === 'game_end') {
+    return (
+      <GameEndPhase
+        gameState={gameState}
+        playerId={playerId ?? ''}
+        onBackToLobby={handleBackToLobby}
+      />
+    );
+  }
+
+  // 判定結果画面
+  if (gameState.phase === 'round_end' || gameState.phase === 'judging') {
+    return (
+      <JudgmentPhase
+        gameState={gameState}
+        playerId={playerId ?? ''}
+        onNextRound={handleNextRound}
+        onLeaveRoom={leaveRoom}
+      />
+    );
+  }
+
+  // ゲーム画面（宣言フェーズ）
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center p-4">
-      <div className="bg-slate-800/95 rounded-xl p-6 max-w-2xl w-full text-center">
-        <h1 className="text-2xl font-bold text-white mb-4">ジャッカル DEV</h1>
-        <p className="text-white/60 mb-4">
-          フェーズ: {gameState.phase} / ラウンド: {gameState.round}
-        </p>
-        <p className="text-white/40 text-sm mb-6">
-          ゲーム画面は実装中です...
-        </p>
-
-        {/* デバッグ情報 */}
-        <div className="bg-slate-700/50 rounded-lg p-4 text-left text-sm">
-          <h3 className="text-orange-400 font-bold mb-2">デバッグ情報</h3>
-          <div className="text-slate-300 space-y-1">
-            <div>プレイヤー数: {players.length}</div>
-            <div>山札残り: {gameState.deck.length}枚</div>
-            <div>配られたカード: {Object.keys(gameState.dealtCards).length}枚</div>
-            <div>現在のターン: {gameState.currentTurnPlayerId}</div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => {
-            leaveRoom();
-          }}
-          className="mt-6 px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
-        >
-          退出
-        </button>
-      </div>
-    </div>
+    <GamePlayPhase
+      gameState={gameState}
+      playerId={playerId ?? ''}
+      playerName={playerName ?? ''}
+      debugMode={debugMode}
+      onDeclare={handleDeclare}
+      onCallJackal={handleCallJackal}
+      onLeaveRoom={leaveRoom}
+    />
   );
 };
