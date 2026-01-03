@@ -4,8 +4,9 @@ import { usePlayer } from './shared/hooks/usePlayer';
 import { AoaGame } from './games/aoa/AoaGame';
 import { MojiHuntGame } from './games/moji-hunt/MojiHuntGame';
 import { MojiHuntDevGame } from './games/moji-hunt-dev/MojiHuntDevGame';
+import { AdminPage } from './admin/AdminPage';
 
-type GameType = 'none' | 'aoa' | 'moji-hunt' | 'moji-hunt-dev';
+type GameType = 'none' | 'aoa' | 'moji-hunt' | 'moji-hunt-dev' | 'admin';
 
 // クエリパラメータを保持（?v=xxx などのキャッシュバスター用）
 const getQueryString = (excludeKeys: string[] = []) => {
@@ -28,6 +29,7 @@ const getGameFromPath = (): GameType => {
     if (redirectPath === 'aoa') return 'aoa';
     if (redirectPath === 'moji-hunt') return 'moji-hunt';
     if (redirectPath === 'moji-hunt-dev') return 'moji-hunt-dev';
+    if (redirectPath === 'admin') return 'admin';
   }
 
   // 通常のパスから取得（先頭・末尾のスラッシュを除去）
@@ -35,6 +37,7 @@ const getGameFromPath = (): GameType => {
   if (path === 'aoa') return 'aoa';
   if (path === 'moji-hunt') return 'moji-hunt';
   if (path === 'moji-hunt-dev') return 'moji-hunt-dev';
+  if (path === 'admin') return 'admin';
   return 'none';
 };
 
@@ -64,6 +67,11 @@ function App() {
     setSelectedGame(game);
     updatePath(game);
   };
+
+  // 管理者画面（名前入力・ローディング不要）
+  if (selectedGame === 'admin') {
+    return <AdminPage onBack={() => selectGame('none')} />;
+  }
 
   // ローディング中
   if (isLoading) {
