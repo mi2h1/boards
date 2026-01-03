@@ -259,7 +259,7 @@ export const GamePlayPhase = ({
                     <Card
                       card={card}
                       hidden={isMe}
-                      size="md"
+                      size="lg"
                       highlighted={isCurrent}
                     />
                     <div className="mt-2 text-center">
@@ -296,7 +296,7 @@ export const GamePlayPhase = ({
                   >
                     <Card
                       hidden={true}
-                      size="md"
+                      size="lg"
                     />
                     <div className="mt-2 text-center">
                       <div className={`text-sm font-medium truncate max-w-20 text-slate-400`}>
