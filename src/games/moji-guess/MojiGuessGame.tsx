@@ -89,6 +89,28 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
     onBack();
   };
 
+  // waitingフェーズはLobbyが全画面表示
+  if (phase === 'waiting') {
+    return (
+      <Lobby
+        roomCode={roomCode}
+        players={players}
+        isHost={isHost}
+        isLoading={isLoading}
+        error={error}
+        settings={settings}
+        hostId={roomData?.hostId ?? ''}
+        playerName={playerName}
+        onCreateRoom={createRoom}
+        onJoinRoom={joinRoom}
+        onLeaveRoom={leaveRoom}
+        onStartGame={handleStartGame}
+        onUpdateSettings={updateSettings}
+        onBack={handleBack}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 to-orange-900 p-4">
       <div className="max-w-4xl mx-auto">
@@ -102,31 +124,13 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-white">文字ゲス</h1>
-            {roomCode && phase !== 'waiting' && (
+            {roomCode && (
               <p className="text-white/60 text-sm">
                 お題: {TOPIC_LABELS[settings.topic]}
               </p>
             )}
           </div>
         </header>
-
-        {/* フェーズに応じた画面表示 */}
-        {phase === 'waiting' && (
-          <Lobby
-            roomCode={roomCode}
-            players={players}
-            isHost={isHost}
-            isLoading={isLoading}
-            error={error}
-            settings={settings}
-            hostId={roomData?.hostId ?? ''}
-            onCreateRoom={createRoom}
-            onJoinRoom={joinRoom}
-            onLeaveRoom={leaveRoom}
-            onStartGame={handleStartGame}
-            onUpdateSettings={updateSettings}
-          />
-        )}
 
         {phase === 'word_input' && gameState && (
           <WordInputPhase
