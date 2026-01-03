@@ -65,7 +65,8 @@ export const PlayerWordDisplay = ({
       {/* 文字表示 */}
       <div className="flex gap-1 flex-wrap">
         {displayChars.map((char, i) => {
-          const isRevealed = revealedPositions[i] || isMe;
+          // 実際に公開（ヒット）された文字かどうか
+          const isRevealed = revealedPositions[i];
           return (
             <div
               key={i}
@@ -75,8 +76,8 @@ export const PlayerWordDisplay = ({
                 ${isEliminated
                   ? 'bg-gray-600/50 text-gray-400'
                   : isRevealed
-                    ? 'bg-pink-500/50 text-white'
-                    : 'bg-white/20 text-white/60'
+                    ? 'bg-red-500/50 text-white'
+                    : 'bg-white/20 text-white'
                 }
               `}
             >

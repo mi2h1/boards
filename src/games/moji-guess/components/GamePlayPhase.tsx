@@ -326,29 +326,6 @@ export const GamePlayPhase = ({
         </div>
       </div>
 
-      {/* 自分の言葉（通常モード時のみ表示） */}
-      {!debugMode && localState && (
-        <div className="bg-white/5 rounded-xl p-4">
-          <p className="text-white/60 text-sm mb-2">あなたの言葉</p>
-          <div className="flex gap-1">
-            {Array.from(localState.normalizedWord).map((char, i) => {
-              const realMyPlayer = players.find(p => p.id === playerId);
-              const isRevealed = realMyPlayer?.revealedPositions[i];
-              return (
-                <div
-                  key={i}
-                  className={`
-                    w-10 h-10 flex items-center justify-center rounded font-bold text-lg
-                    ${isRevealed ? 'bg-red-500/50 text-white' : 'bg-white/20 text-white'}
-                  `}
-                >
-                  {char}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
