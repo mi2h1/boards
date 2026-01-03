@@ -9,6 +9,7 @@ interface PlayerWordDisplayProps {
   localState?: LocalPlayerState; // 自分の場合のみ
   isCurrentTurn: boolean;
   isMe: boolean;
+  revealingPositions?: number[]; // フリップアニメーション中の位置
 }
 
 export const PlayerWordDisplay = ({
@@ -16,6 +17,7 @@ export const PlayerWordDisplay = ({
   localState,
   isCurrentTurn,
   isMe,
+  revealingPositions,
 }: PlayerWordDisplayProps) => {
   const { name, wordLength, revealedPositions, revealedCharacters, isEliminated } = player;
 
@@ -94,6 +96,8 @@ export const PlayerWordDisplay = ({
       {/* 文字表示 */}
       <div className="flex gap-1">
         {displayChars.map((item, i) => {
+          const isRevealing = revealingPositions?.includes(i);
+
           // タイプに応じたスタイル
           let bgClass = 'bg-white/20 text-white';
           if (isEliminated) {
@@ -111,13 +115,26 @@ export const PlayerWordDisplay = ({
                 w-8 h-8 flex items-center justify-center
                 rounded font-bold text-base
                 ${bgClass}
+                ${isRevealing ? 'animate-flip' : ''}
               `}
+              style={isRevealing ? {
+                animation: 'flip 0.6s ease-in-out',
+              } : undefined}
             >
               {item.char}
             </div>
           );
         })}
       </div>
+
+      {/* フリップアニメーション用CSS */}
+      <style>{`
+        @keyframes flip {
+          0% { transform: rotateY(0deg); }
+          50% { transform: rotateY(90deg); }
+          100% { transform: rotateY(0deg); }
+        }
+      `}</style>
 
       {/* 脱落時のメッセージ */}
       {isEliminated && player.eliminatedAt && (

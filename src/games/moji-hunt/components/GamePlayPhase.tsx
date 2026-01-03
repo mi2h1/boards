@@ -5,6 +5,14 @@ import { HiraganaBoard } from './HiraganaBoard';
 import { PlayerWordDisplay } from './PlayerWordDisplay';
 import { findCharacterPositions } from '../lib/hiragana';
 
+// 攻撃フェーズの状態
+type AttackPhaseState = {
+  char: string;
+  attackerName: string;
+  phase: 'selecting' | 'revealing';
+  hits: AttackHit[];
+} | null;
+
 interface GamePlayPhaseProps {
   gameState: GameState;
   localState: LocalPlayerState | null;
@@ -31,7 +39,9 @@ export const GamePlayPhase = ({
     lastAttackHadHit,
   } = gameState;
 
-  const [pendingAttack, setPendingAttack] = useState<string | null>(null);
+  const [attackPhase, setAttackPhase] = useState<AttackPhaseState>(null);
+  // フリップアニメーション中のプレイヤーと位置
+  const [revealingPlayers, setRevealingPlayers] = useState<Record<string, number[]>>({});
 
   // デバッグモード用: どのプレイヤーを操作しているか
   const [debugControlledPlayerId, setDebugControlledPlayerId] = useState<string | null>(null);
@@ -45,16 +55,14 @@ export const GamePlayPhase = ({
 
   // 攻撃処理
   const handleAttack = (char: string) => {
-    if (!isMyTurn || pendingAttack) return;
-
-    setPendingAttack(char);
+    if (!isMyTurn || attackPhase) return;
 
     // 全プレイヤーのヒット判定（Firebaseに保存されたnormalizedWordを使用）
     const allHits: AttackHit[] = [];
 
     players.forEach(p => {
       if (p.isEliminated) return;
-      if (!p.normalizedWord) return; // 言葉が設定されていない場合はスキップ
+      if (!p.normalizedWord) return;
 
       const positions = findCharacterPositions(p.normalizedWord, char);
       if (positions.length > 0) {
@@ -67,31 +75,50 @@ export const GamePlayPhase = ({
       }
     });
 
-    // 攻撃結果をFirebaseに送信
-    const attackResult: AttackResult = {
-      attackerId: controlledPlayerId,
+    // フェーズ1: 選択アナウンス
+    setAttackPhase({
+      char,
       attackerName: myPlayer?.name ?? '',
-      targetChar: char,
+      phase: 'selecting',
       hits: allHits,
-      timestamp: Date.now(),
-    };
-
-    // 使用済み文字に追加
-    const newUsedCharacters = [...usedCharacters, char];
-
-    // 攻撃履歴に追加
-    const newAttackHistory = [...attackHistory, attackResult];
-
-    updateGameState({
-      usedCharacters: newUsedCharacters,
-      attackHistory: newAttackHistory,
-      // lastAttackHadHitはprocessAttackResult内で適切に設定する
     });
 
-    // 少し待ってからターンを進める
+    // 1.5秒後にフェーズ2: 結果発表
     setTimeout(() => {
-      processAttackResult(char, allHits);
-      setPendingAttack(null);
+      setAttackPhase(prev => prev ? { ...prev, phase: 'revealing' } : null);
+
+      // ヒットがある場合、フリップアニメーション開始
+      if (allHits.length > 0) {
+        const revealing: Record<string, number[]> = {};
+        allHits.forEach(hit => {
+          revealing[hit.playerId] = hit.positions;
+        });
+        setRevealingPlayers(revealing);
+      }
+
+      // 攻撃結果をFirebaseに送信
+      const attackResult: AttackResult = {
+        attackerId: controlledPlayerId,
+        attackerName: myPlayer?.name ?? '',
+        targetChar: char,
+        hits: allHits,
+        timestamp: Date.now(),
+      };
+
+      const newUsedCharacters = [...usedCharacters, char];
+      const newAttackHistory = [...attackHistory, attackResult];
+
+      updateGameState({
+        usedCharacters: newUsedCharacters,
+        attackHistory: newAttackHistory,
+      });
+
+      // さらに1.5秒後にターン処理
+      setTimeout(() => {
+        processAttackResult(char, allHits);
+        setAttackPhase(null);
+        setRevealingPlayers({});
+      }, 1500);
     }, 1500);
   };
 
@@ -269,65 +296,103 @@ export const GamePlayPhase = ({
         <div className="space-y-3 order-2 lg:order-1 lg:w-72 lg:shrink-0">
           <h3 className="text-white/80 font-bold">プレイヤー状況</h3>
           <div className="grid gap-3">
-            {players.map((player) => (
-              <PlayerWordDisplay
-                key={player.id}
-                player={player}
-                localState={player.id === playerId ? localState ?? undefined : undefined}
-                isCurrentTurn={player.id === currentTurnPlayerId}
-                isMe={player.id === playerId}
-              />
-            ))}
+            {players.map((player) => {
+              // デバッグモードでは操作中のプレイヤー視点で表示
+              const viewAsMe = player.id === controlledPlayerId;
+              return (
+                <PlayerWordDisplay
+                  key={player.id}
+                  player={player}
+                  localState={viewAsMe ? localState ?? undefined : undefined}
+                  isCurrentTurn={player.id === currentTurnPlayerId}
+                  isMe={viewAsMe}
+                  revealingPositions={revealingPlayers[player.id]}
+                />
+              );
+            })}
           </div>
         </div>
 
         {/* 右カラム: アナウンス + 50音ボード */}
         <div className="space-y-4 order-1 lg:order-2 lg:flex-1">
-          {/* ターン表示 */}
-          <div className="bg-white/10 rounded-xl p-4 text-center">
-            {isMyTurn ? (
-              <div className="flex items-center justify-center gap-2 text-pink-300">
-                <Zap className="w-5 h-5" />
-                <span className="text-lg font-bold">
-                  {debugMode && debugControlledPlayerId
-                    ? `${myPlayer?.name}の番です！文字を選んで攻撃`
-                    : 'あなたの番です！文字を選んで攻撃'
-                  }
-                </span>
-              </div>
-            ) : (
-              <div className="text-white/80">
-                <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
-              </div>
-            )}
-            {lastAttackHadHit && !isMyTurn && currentPlayer && (
-              <p className="text-yellow-300 text-sm mt-1">
-                ヒット！ {currentPlayer.name} は続けて攻撃できます
-              </p>
-            )}
-          </div>
-
-          {/* 最新の攻撃結果 */}
-          {latestAttack && (
-            <div className="bg-white/5 rounded-xl p-4">
-              <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
-                <span className="font-bold">{latestAttack.attackerName}</span>
-                <ArrowRight className="w-4 h-4" />
-                <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
-                <span className="ml-2">
-                  {latestAttack.hits.length > 0
-                    ? `${latestAttack.hits.length}人にヒット！`
-                    : 'ハズレ...'}
-                </span>
-              </div>
+          {/* 攻撃フェーズのアナウンス */}
+          {attackPhase ? (
+            <div className="bg-white/10 rounded-xl p-6 text-center">
+              {attackPhase.phase === 'selecting' ? (
+                <div className="space-y-2">
+                  <p className="text-white text-lg">
+                    <span className="font-bold text-pink-300">{attackPhase.attackerName}</span> が
+                  </p>
+                  <p className="text-4xl font-bold text-yellow-300 animate-pulse">
+                    「{attackPhase.char}」
+                  </p>
+                  <p className="text-white text-lg">を選択！</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {attackPhase.hits.length > 0 ? (
+                    <>
+                      <p className="text-2xl font-bold text-red-400">ヒット！</p>
+                      <p className="text-white">
+                        {attackPhase.hits.map(h => h.playerName).join('、')} に当たった！
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-400">ハズレ...</p>
+                  )}
+                </div>
+              )}
             </div>
+          ) : (
+            <>
+              {/* ターン表示 */}
+              <div className="bg-white/10 rounded-xl p-4 text-center">
+                {isMyTurn ? (
+                  <div className="flex items-center justify-center gap-2 text-pink-300">
+                    <Zap className="w-5 h-5" />
+                    <span className="text-lg font-bold">
+                      {debugMode && debugControlledPlayerId
+                        ? `${myPlayer?.name}の番です！文字を選んで攻撃`
+                        : 'あなたの番です！文字を選んで攻撃'
+                      }
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-white/80">
+                    <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
+                  </div>
+                )}
+                {lastAttackHadHit && !isMyTurn && currentPlayer && (
+                  <p className="text-yellow-300 text-sm mt-1">
+                    ヒット！ {currentPlayer.name} は続けて攻撃できます
+                  </p>
+                )}
+              </div>
+
+              {/* 最新の攻撃結果 */}
+              {latestAttack && (
+                <div className="bg-white/5 rounded-xl p-4">
+                  <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
+                    <span className="font-bold">{latestAttack.attackerName}</span>
+                    <ArrowRight className="w-4 h-4" />
+                    <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
+                    <span className="ml-2">
+                      {latestAttack.hits.length > 0
+                        ? `${latestAttack.hits.length}人にヒット！`
+                        : 'ハズレ...'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* 50音ボード */}
           <HiraganaBoard
             usedCharacters={usedCharacters}
-            disabled={!isMyTurn || pendingAttack !== null}
+            disabled={!isMyTurn || attackPhase !== null}
             onSelectCharacter={handleAttack}
+            highlightedChar={attackPhase?.char}
           />
         </div>
       </div>
