@@ -48,6 +48,14 @@ export interface AttackResult {
   timestamp: number;
 }
 
+// 現在の攻撃フェーズ（Firebase同期して全員に見せる）
+export interface CurrentAttack {
+  attackerName: string;
+  targetChar: string;
+  phase: 'selecting' | 'revealing';
+  hits: AttackHit[];
+}
+
 // ゲーム設定
 export interface GameSettings {
   minWordLength: number;
@@ -66,6 +74,7 @@ export interface GameState {
   attackHistory: AttackResult[];
   lastAttackHadHit: boolean; // 最後の攻撃がヒットしたか（連続攻撃判定用）
   winnerId: string | null;
+  currentAttack?: CurrentAttack | null; // 現在の攻撃演出（全員に表示）
 }
 
 // ルームデータ

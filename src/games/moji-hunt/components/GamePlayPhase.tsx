@@ -1,17 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Zap, ArrowRight, FlaskConical, Eye } from 'lucide-react';
 import type { GameState, LocalPlayerState, AttackResult, AttackHit } from '../types/game';
 import { HiraganaBoard } from './HiraganaBoard';
 import { PlayerWordDisplay } from './PlayerWordDisplay';
 import { findCharacterPositions } from '../lib/hiragana';
-
-// 攻撃フェーズの状態
-type AttackPhaseState = {
-  char: string;
-  attackerName: string;
-  phase: 'selecting' | 'revealing';
-  hits: AttackHit[];
-} | null;
 
 interface GamePlayPhaseProps {
   gameState: GameState;
@@ -37,11 +29,24 @@ export const GamePlayPhase = ({
     usedCharacters,
     attackHistory,
     lastAttackHadHit,
+    currentAttack,
   } = gameState;
 
-  const [attackPhase, setAttackPhase] = useState<AttackPhaseState>(null);
-  // フリップアニメーション中のプレイヤーと位置
+  // フリップアニメーション中のプレイヤーと位置（revealing時に設定）
   const [revealingPlayers, setRevealingPlayers] = useState<Record<string, number[]>>({});
+
+  // currentAttackがrevealingに変わったらフリップアニメーション開始
+  useEffect(() => {
+    if (currentAttack?.phase === 'revealing' && currentAttack.hits.length > 0) {
+      const revealing: Record<string, number[]> = {};
+      currentAttack.hits.forEach(hit => {
+        revealing[hit.playerId] = hit.positions;
+      });
+      setRevealingPlayers(revealing);
+    } else {
+      setRevealingPlayers({});
+    }
+  }, [currentAttack?.phase, currentAttack?.hits]);
 
   // デバッグモード用: どのプレイヤーを操作しているか
   const [debugControlledPlayerId, setDebugControlledPlayerId] = useState<string | null>(null);
@@ -55,7 +60,7 @@ export const GamePlayPhase = ({
 
   // 攻撃処理
   const handleAttack = (char: string) => {
-    if (!isMyTurn || attackPhase) return;
+    if (!isMyTurn || currentAttack) return;
 
     // 全プレイヤーのヒット判定（Firebaseに保存されたnormalizedWordを使用）
     const allHits: AttackHit[] = [];
@@ -75,26 +80,26 @@ export const GamePlayPhase = ({
       }
     });
 
-    // フェーズ1: 選択アナウンス
-    setAttackPhase({
-      char,
-      attackerName: myPlayer?.name ?? '',
-      phase: 'selecting',
-      hits: allHits,
+    // フェーズ1: 選択アナウンス（Firebaseに保存して全員に表示）
+    updateGameState({
+      currentAttack: {
+        attackerName: myPlayer?.name ?? '',
+        targetChar: char,
+        phase: 'selecting',
+        hits: allHits,
+      },
     });
 
     // 1.5秒後にフェーズ2: 結果発表
     setTimeout(() => {
-      setAttackPhase(prev => prev ? { ...prev, phase: 'revealing' } : null);
-
-      // ヒットがある場合、フリップアニメーション開始
-      if (allHits.length > 0) {
-        const revealing: Record<string, number[]> = {};
-        allHits.forEach(hit => {
-          revealing[hit.playerId] = hit.positions;
-        });
-        setRevealingPlayers(revealing);
-      }
+      updateGameState({
+        currentAttack: {
+          attackerName: myPlayer?.name ?? '',
+          targetChar: char,
+          phase: 'revealing',
+          hits: allHits,
+        },
+      });
 
       // 攻撃結果をFirebaseに送信
       const attackResult: AttackResult = {
@@ -116,8 +121,8 @@ export const GamePlayPhase = ({
       // さらに1.5秒後にターン処理
       setTimeout(() => {
         processAttackResult(char, allHits);
-        setAttackPhase(null);
-        setRevealingPlayers({});
+        // currentAttackをクリア
+        updateGameState({ currentAttack: null });
       }, 1500);
     }, 1500);
   };
@@ -316,25 +321,25 @@ export const GamePlayPhase = ({
         {/* 右カラム: アナウンス + 50音ボード */}
         <div className="space-y-4 order-1 lg:order-2 lg:flex-1">
           {/* 攻撃フェーズのアナウンス */}
-          {attackPhase ? (
+          {currentAttack ? (
             <div className="bg-white/10 rounded-xl p-6 text-center">
-              {attackPhase.phase === 'selecting' ? (
+              {currentAttack.phase === 'selecting' ? (
                 <div className="space-y-2">
                   <p className="text-white text-lg">
-                    <span className="font-bold text-pink-300">{attackPhase.attackerName}</span> が
+                    <span className="font-bold text-pink-300">{currentAttack.attackerName}</span> が
                   </p>
                   <p className="text-4xl font-bold text-yellow-300 animate-pulse">
-                    「{attackPhase.char}」
+                    「{currentAttack.targetChar}」
                   </p>
                   <p className="text-white text-lg">を選択！</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {attackPhase.hits.length > 0 ? (
+                  {currentAttack.hits.length > 0 ? (
                     <>
                       <p className="text-2xl font-bold text-red-400">ヒット！</p>
                       <p className="text-white">
-                        {attackPhase.hits.map(h => h.playerName).join('、')} に当たった！
+                        {currentAttack.hits.map(h => h.playerName).join('、')} に当たった！
                       </p>
                     </>
                   ) : (
@@ -390,9 +395,9 @@ export const GamePlayPhase = ({
           {/* 50音ボード */}
           <HiraganaBoard
             usedCharacters={usedCharacters}
-            disabled={!isMyTurn || attackPhase !== null}
+            disabled={!isMyTurn || currentAttack !== null}
             onSelectCharacter={handleAttack}
-            highlightedChar={attackPhase?.char}
+            highlightedChar={currentAttack?.targetChar}
           />
         </div>
       </div>
