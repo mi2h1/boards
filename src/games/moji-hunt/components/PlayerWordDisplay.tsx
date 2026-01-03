@@ -10,6 +10,7 @@ interface PlayerWordDisplayProps {
   isCurrentTurn: boolean;
   isMe: boolean;
   revealingPositions?: number[]; // フリップアニメーション中の位置
+  revealingCharacters?: string[]; // フリップで公開される文字
 }
 
 export const PlayerWordDisplay = ({
@@ -18,6 +19,7 @@ export const PlayerWordDisplay = ({
   isCurrentTurn,
   isMe,
   revealingPositions,
+  revealingCharacters,
 }: PlayerWordDisplayProps) => {
   const { name, wordLength, revealedPositions, revealedCharacters, isEliminated } = player;
 
@@ -96,30 +98,60 @@ export const PlayerWordDisplay = ({
       {/* 文字表示 */}
       <div className="flex gap-1">
         {displayChars.map((item, i) => {
-          const isRevealing = revealingPositions?.includes(i);
+          const revealingIndex = revealingPositions?.indexOf(i) ?? -1;
+          const isRevealing = revealingIndex !== -1;
+          const revealedChar = isRevealing && revealingCharacters ? revealingCharacters[revealingIndex] : null;
 
           // タイプに応じたスタイル
           let bgClass = 'bg-white/20 text-white';
+          let revealedBgClass = 'bg-red-500/50 text-white';
           if (isEliminated) {
             bgClass = 'bg-gray-600/50 text-gray-400';
+            revealedBgClass = 'bg-gray-600/50 text-gray-400';
           } else if (item.type === 'revealed' || item.type === 'self-revealed') {
             bgClass = 'bg-red-500/50 text-white';
           } else if (item.type === 'dummy') {
             bgClass = 'bg-white/5 text-white/30';
           }
 
+          // フリップ中のカードは3D構造で表示
+          if (isRevealing && revealedChar) {
+            return (
+              <div
+                key={i}
+                className="w-8 h-8 relative"
+                style={{ perspective: '200px' }}
+              >
+                <div
+                  className="w-full h-full relative"
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    animation: 'cardFlip 0.6s ease-in-out forwards',
+                  }}
+                >
+                  {/* 表面（?） */}
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center rounded font-bold text-base ${bgClass}`}
+                    style={{ backfaceVisibility: 'hidden' }}
+                  >
+                    {item.char}
+                  </div>
+                  {/* 裏面（公開される文字） */}
+                  <div
+                    className={`absolute inset-0 flex items-center justify-center rounded font-bold text-base ${revealedBgClass}`}
+                    style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                  >
+                    {revealedChar}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div
               key={i}
-              className={`
-                w-8 h-8 flex items-center justify-center
-                rounded font-bold text-base
-                ${bgClass}
-                ${isRevealing ? 'animate-flip' : ''}
-              `}
-              style={isRevealing ? {
-                animation: 'flip 0.6s ease-in-out',
-              } : undefined}
+              className={`w-8 h-8 flex items-center justify-center rounded font-bold text-base ${bgClass}`}
             >
               {item.char}
             </div>
@@ -129,10 +161,9 @@ export const PlayerWordDisplay = ({
 
       {/* フリップアニメーション用CSS */}
       <style>{`
-        @keyframes flip {
+        @keyframes cardFlip {
           0% { transform: rotateY(0deg); }
-          50% { transform: rotateY(90deg); }
-          100% { transform: rotateY(0deg); }
+          100% { transform: rotateY(180deg); }
         }
       `}</style>
 

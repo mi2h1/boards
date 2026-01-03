@@ -32,15 +32,18 @@ export const GamePlayPhase = ({
     currentAttack,
   } = gameState;
 
-  // フリップアニメーション中のプレイヤーと位置（revealing時に設定）
-  const [revealingPlayers, setRevealingPlayers] = useState<Record<string, number[]>>({});
+  // フリップアニメーション中のプレイヤーと位置・文字（revealing時に設定）
+  const [revealingPlayers, setRevealingPlayers] = useState<Record<string, { positions: number[]; characters: string[] }>>({});
 
   // currentAttackがrevealingに変わったらフリップアニメーション開始
   useEffect(() => {
     if (currentAttack?.phase === 'revealing' && currentAttack.hits.length > 0) {
-      const revealing: Record<string, number[]> = {};
+      const revealing: Record<string, { positions: number[]; characters: string[] }> = {};
       currentAttack.hits.forEach(hit => {
-        revealing[hit.playerId] = hit.positions;
+        revealing[hit.playerId] = {
+          positions: hit.positions,
+          characters: hit.characters,
+        };
       });
       setRevealingPlayers(revealing);
     } else {
@@ -336,6 +339,7 @@ export const GamePlayPhase = ({
             {players.map((player) => {
               // デバッグモードでは操作中のプレイヤー視点で表示
               const viewAsMe = player.id === controlledPlayerId;
+              const revealingData = revealingPlayers[player.id];
               return (
                 <PlayerWordDisplay
                   key={player.id}
@@ -343,7 +347,8 @@ export const GamePlayPhase = ({
                   localState={viewAsMe ? localState ?? undefined : undefined}
                   isCurrentTurn={player.id === currentTurnPlayerId}
                   isMe={viewAsMe}
-                  revealingPositions={revealingPlayers[player.id]}
+                  revealingPositions={revealingData?.positions}
+                  revealingCharacters={revealingData?.characters}
                 />
               );
             })}
