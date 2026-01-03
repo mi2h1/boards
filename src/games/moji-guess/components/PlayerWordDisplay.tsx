@@ -24,13 +24,18 @@ export const PlayerWordDisplay = ({
   const displayChars: DisplayChar[] = [];
 
   if (isMe && localState) {
-    // 自分の場合は実際の文字数を表示
-    for (let i = 0; i < localState.normalizedWord.length; i++) {
-      const isRevealed = revealedPositions[i];
-      displayChars.push({
-        char: localState.normalizedWord[i],
-        type: isRevealed ? 'self-revealed' : 'self',
-      });
+    // 自分の場合も7枚表示
+    for (let i = 0; i < DISPLAY_LENGTH; i++) {
+      if (i < localState.normalizedWord.length) {
+        const isRevealed = revealedPositions[i];
+        displayChars.push({
+          char: localState.normalizedWord[i],
+          type: isRevealed ? 'self-revealed' : 'self',
+        });
+      } else {
+        // ダミー文字
+        displayChars.push({ char: '-', type: 'dummy' });
+      }
     }
   } else {
     // 他プレイヤーの場合は常に7文字表示
