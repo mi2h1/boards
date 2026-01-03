@@ -54,6 +54,7 @@ export interface CurrentAttack {
   targetChar: string;
   phase: 'selecting' | 'revealing';
   hits: AttackHit[];
+  timestamp: number; // 攻撃開始時刻（古い攻撃を自動クリア用）
 }
 
 // ゲーム設定

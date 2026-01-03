@@ -48,6 +48,26 @@ export const GamePlayPhase = ({
     }
   }, [currentAttack?.phase, currentAttack?.hits]);
 
+  // 古いcurrentAttackを自動クリア（10秒以上経過したもの）
+  useEffect(() => {
+    if (!currentAttack?.timestamp) return;
+
+    const checkStale = () => {
+      const age = Date.now() - currentAttack.timestamp;
+      if (age > 10000) {
+        console.log('Clearing stale currentAttack:', age, 'ms old');
+        updateGameState({ currentAttack: null });
+      }
+    };
+
+    // 即時チェック
+    checkStale();
+
+    // 定期的にチェック
+    const interval = setInterval(checkStale, 2000);
+    return () => clearInterval(interval);
+  }, [currentAttack?.timestamp, updateGameState]);
+
   // デバッグモード用: どのプレイヤーを操作しているか
   const [debugControlledPlayerId, setDebugControlledPlayerId] = useState<string | null>(null);
 
@@ -81,12 +101,14 @@ export const GamePlayPhase = ({
     });
 
     // フェーズ1: 選択アナウンス（Firebaseに保存して全員に表示）
+    const attackTimestamp = Date.now();
     updateGameState({
       currentAttack: {
         attackerName: myPlayer?.name ?? '',
         targetChar: char,
         phase: 'selecting',
         hits: allHits,
+        timestamp: attackTimestamp,
       },
     });
 
@@ -98,6 +120,7 @@ export const GamePlayPhase = ({
           targetChar: char,
           phase: 'revealing',
           hits: allHits,
+          timestamp: attackTimestamp,
         },
       });
 
