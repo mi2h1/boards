@@ -13,6 +13,8 @@ interface WordInputPhaseProps {
   // お題チェンジ投票
   topicChangeVotes: string[];
   onVoteTopicChange: () => void;
+  // ターン順
+  turnOrder: string[];
   // デバッグ用
   debugMode?: boolean;
   debugLocalStates?: Record<string, LocalPlayerState>;
@@ -29,6 +31,7 @@ export const WordInputPhase = ({
   onSubmitWord,
   topicChangeVotes,
   onVoteTopicChange,
+  turnOrder,
   debugMode = false,
   debugLocalStates = {},
   onDebugWordSubmit,
@@ -39,6 +42,13 @@ export const WordInputPhase = ({
 
   const validation = validateWord(word, settings.minWordLength, settings.maxWordLength);
   const normalizedPreview = word ? normalizeWord(word) : '';
+
+  // プレイヤーをターン順にソート
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aIndex = turnOrder.indexOf(a.id);
+    const bIndex = turnOrder.indexOf(b.id);
+    return aIndex - bIndex;
+  });
 
   const handleSubmit = () => {
     if (!validation.isValid) {
@@ -93,7 +103,7 @@ export const WordInputPhase = ({
             入力状況 ({readyPlayers.length}/{players.length})
           </h3>
           <div className="space-y-2">
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <div
                 key={player.id}
                 className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg"
@@ -235,6 +245,7 @@ export const WordInputPhase = ({
           onDebugWordSubmit={onDebugWordSubmit}
           topicChangeVotes={topicChangeVotes}
           onDebugVoteTopicChange={onDebugVoteTopicChange}
+          turnOrder={turnOrder}
         />
       )}
     </div>
@@ -250,6 +261,7 @@ interface DebugWordInputPanelProps {
   onDebugWordSubmit: (playerId: string, originalWord: string, normalizedWord: string) => void;
   topicChangeVotes: string[];
   onDebugVoteTopicChange?: (playerId: string) => void;
+  turnOrder: string[];
 }
 
 const DebugWordInputPanel = ({
@@ -260,6 +272,7 @@ const DebugWordInputPanel = ({
   onDebugWordSubmit,
   topicChangeVotes,
   onDebugVoteTopicChange,
+  turnOrder,
 }: DebugWordInputPanelProps) => {
   const [inputs, setInputs] = useState<Record<string, string>>({});
 
@@ -272,8 +285,13 @@ const DebugWordInputPanel = ({
     }
   };
 
-  // 自分以外のプレイヤーのみ表示
-  const otherPlayers = players.filter(p => p.id !== currentPlayerId);
+  // プレイヤーをターン順にソートして、自分以外を表示
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aIndex = turnOrder.indexOf(a.id);
+    const bIndex = turnOrder.indexOf(b.id);
+    return aIndex - bIndex;
+  });
+  const otherPlayers = sortedPlayers.filter(p => p.id !== currentPlayerId);
 
   if (otherPlayers.length === 0) return null;
 

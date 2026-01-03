@@ -364,6 +364,7 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
             onSubmitWord={handleWordSubmit}
             topicChangeVotes={gameState.topicChangeVotes ?? []}
             onVoteTopicChange={handleVoteTopicChange}
+            turnOrder={gameState.turnOrder}
             debugMode={debugMode}
             debugLocalStates={debugLocalStates}
             onDebugWordSubmit={handleDebugWordSubmit}
