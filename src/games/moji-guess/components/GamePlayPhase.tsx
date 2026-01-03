@@ -124,13 +124,17 @@ export const GamePlayPhase = ({
         eliminationCount++;
       }
 
-      return {
+      // Firebaseはundefinedを許可しないので、eliminatedAtは脱落時のみ設定
+      const updatedPlayer: typeof p = {
         ...p,
         revealedPositions: newRevealedPositions,
         revealedCharacters: newRevealedCharacters,
         isEliminated: allRevealed,
-        eliminatedAt: allRevealed ? eliminationCount : undefined,
       };
+      if (allRevealed) {
+        updatedPlayer.eliminatedAt = eliminationCount;
+      }
+      return updatedPlayer;
     });
 
     // 勝利判定
@@ -144,10 +148,13 @@ export const GamePlayPhase = ({
       return;
     }
 
-    // 次のターンへ
+    // 次のターンへの移動判定
+    // 連続攻撃は1回まで：前回ヒットしていなくて今回ヒットした場合のみ連続攻撃可能
+    const canContinue = anyHit && !lastAttackHadHit;
     let nextPlayerId = currentTurnPlayerId;
-    if (!anyHit) {
-      // ヒットなしの場合、次のプレイヤーへ
+
+    if (!canContinue) {
+      // 次のプレイヤーへ
       const currentIndex = turnOrder.indexOf(currentTurnPlayerId ?? '');
       for (let i = 1; i < turnOrder.length; i++) {
         const nextIndex = (currentIndex + i) % turnOrder.length;

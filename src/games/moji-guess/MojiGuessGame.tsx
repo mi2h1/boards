@@ -220,14 +220,16 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
               setLocalState(null);
               setDebugLocalStates({});
               // プレイヤーをリセットしてロビーに戻る
+              // Firebaseはundefinedを許可しないので、eliminatedAtは含めない
               const resetPlayers = players.map(p => ({
-                ...p,
+                id: p.id,
+                name: p.name,
                 wordLength: 0,
+                normalizedWord: '',
                 revealedPositions: [],
                 revealedCharacters: [],
                 isEliminated: false,
                 isReady: false,
-                eliminatedAt: undefined,
               }));
               updateGameState({
                 phase: 'waiting',
