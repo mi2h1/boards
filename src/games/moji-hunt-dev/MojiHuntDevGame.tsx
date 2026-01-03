@@ -339,8 +339,8 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
                 DEBUG
               </span>
             )}
-            {gameState?.currentTopic && (
-              <span className="text-white/60 text-sm">
+            {phase === 'playing' && gameState?.currentTopic && (
+              <span className="bg-white/20 text-white/80 px-3 py-1 rounded-full text-sm">
                 お題: {gameState.currentTopic}
               </span>
             )}

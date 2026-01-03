@@ -138,9 +138,6 @@ export const WordInputPhase = ({
         <p className="text-white/40 text-sm mt-2">
           自由にお題を考えてもOK!
         </p>
-        <p className="text-white/60 mt-4">
-          {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください
-        </p>
         {/* お題チェンジ投票 */}
         <div className="mt-4 pt-4 border-t border-white/10">
           <div className="flex items-center justify-center gap-3">
@@ -165,6 +162,9 @@ export const WordInputPhase = ({
 
       {/* 入力フォーム */}
       <div className="bg-white/10 rounded-xl p-6">
+        <p className="text-white/60 text-center mb-4">
+          {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください
+        </p>
         <div className="mb-4">
           <input
             type="text"
