@@ -247,8 +247,18 @@ export const Lobby = ({
                 type="text"
                 value={roomCodeInput}
                 onChange={(e) => {
+                  // IMEのコンポジション中は無視
+                  if ((e.nativeEvent as InputEvent).isComposing) return;
                   // 英字のみ抽出して大文字に変換、4文字まで
                   const filtered = e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z]/g, '')
+                    .slice(0, 4);
+                  setRoomCodeInput(filtered);
+                }}
+                onCompositionEnd={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  const filtered = target.value
                     .toUpperCase()
                     .replace(/[^A-Z]/g, '')
                     .slice(0, 4);
