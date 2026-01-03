@@ -164,12 +164,17 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     const updatedPlayers = players.map(p => {
       if (p.id === loserId) {
         const newLife = p.life - 1;
-        return {
+        const isEliminated = newLife <= 0;
+        // Firebaseはundefinedを許可しないので、eliminatedAtは脱落時のみ設定
+        const updatedPlayer = {
           ...p,
           life: newLife,
-          isEliminated: newLife <= 0,
-          eliminatedAt: newLife <= 0 ? gameState.round : undefined,
+          isEliminated,
         };
+        if (isEliminated) {
+          (updatedPlayer as typeof p).eliminatedAt = gameState.round;
+        }
+        return updatedPlayer;
       }
       return p;
     });
