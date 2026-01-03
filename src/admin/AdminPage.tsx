@@ -137,32 +137,37 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
           </div>
         )}
         {(room.gameType === 'moji-hunt' || room.gameType === 'moji-hunt-dev') && (
-          <div className="text-slate-400 text-sm mb-2 space-y-2">
-            {room.details.currentTopic && (
-              <div>お題: <span className="text-white">{room.details.currentTopic}</span></div>
-            )}
-            {room.details.currentTurnPlayerName && room.phase === 'playing' && (
-              <div className="flex items-center gap-2">
-                <span>ターン: <span className="text-yellow-400">{room.details.currentTurnPlayerName}</span></span>
-                {room.details.usedCharacters && room.details.usedCharacters.length > 0 && (
-                  <span className="px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-300 font-bold">
-                    {room.details.usedCharacters[room.details.usedCharacters.length - 1]}
-                  </span>
-                )}
-              </div>
-            )}
-            {room.details.eliminatedCount !== undefined && room.details.eliminatedCount > 0 && (
-              <div>脱落: <span className="text-red-400">{room.details.eliminatedCount}人</span></div>
-            )}
-            {/* 文字パネル（50音配置） */}
+          <div className="text-slate-400 text-sm mb-2 flex gap-3">
+            {/* 左カラム: 情報 */}
+            <div className="flex-1 space-y-1">
+              {room.details.currentTopic && (
+                <div>お題: <span className="text-white">{room.details.currentTopic}</span></div>
+              )}
+              {room.details.currentTurnPlayerName && room.phase === 'playing' && (
+                <div className="flex items-center gap-2">
+                  <span>ターン: <span className="text-yellow-400">{room.details.currentTurnPlayerName}</span></span>
+                  {room.details.usedCharacters && room.details.usedCharacters.length > 0 && (
+                    <span className="px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-300 font-bold">
+                      {room.details.usedCharacters[room.details.usedCharacters.length - 1]}
+                    </span>
+                  )}
+                </div>
+              )}
+              {room.details.eliminatedCount !== undefined && room.details.eliminatedCount > 0 && (
+                <div>脱落: <span className="text-red-400">{room.details.eliminatedCount}人</span></div>
+              )}
+              {room.phase === 'playing' && room.details.usedCharacters && (
+                <div className="text-xs text-slate-500">
+                  使用済み: {room.details.usedCharacters.length}/46
+                </div>
+              )}
+            </div>
+            {/* 右カラム: 文字パネル */}
             {room.phase === 'playing' && room.details.usedCharacters && (() => {
               const usedChars = room.details.usedCharacters || [];
               const lastChar = usedChars.length > 0 ? usedChars[usedChars.length - 1] : null;
               return (
-                <div className="mt-2">
-                  <div className="text-xs text-slate-500 mb-1">
-                    使用済み: {usedChars.length}/46
-                  </div>
+                <div className="flex-shrink-0">
                   <div className="grid gap-px" style={{ gridTemplateColumns: 'repeat(10, 1fr)', width: 'fit-content' }}>
                     {HIRAGANA_GRID.map((char, i) => {
                       if (char === null) {
