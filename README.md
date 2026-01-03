@@ -2,8 +2,6 @@
 
 オンラインで遊べるボードゲームポータルサイト。
 
-**URL**: https://mi2h1.github.io/boards/
-
 ## ゲーム一覧
 
 ### アトランティスの深淵 (Abyss of Atlantis)
