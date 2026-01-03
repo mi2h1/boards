@@ -371,7 +371,6 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     <GamePlayPhase
       gameState={gameState}
       playerId={playerId ?? ''}
-      playerName={playerName ?? ''}
       debugMode={debugMode}
       onDeclare={handleDeclare}
       onCallJackal={handleCallJackal}

@@ -6,7 +6,6 @@ import type { GameState, Player, Card as CardType } from '../types/game';
 interface GamePlayPhaseProps {
   gameState: GameState;
   playerId: string;
-  playerName: string;
   debugMode?: boolean;
   onDeclare: (value: number, actingPlayerId: string) => void;
   onCallJackal: (actingPlayerId: string) => void;
@@ -16,7 +15,6 @@ interface GamePlayPhaseProps {
 export const GamePlayPhase = ({
   gameState,
   playerId,
-  playerName,
   debugMode = false,
   onDeclare,
   onCallJackal,
@@ -45,10 +43,8 @@ export const GamePlayPhase = ({
   const currentPlayer = players.find(p => p.id === currentTurnPlayerId);
   const lastDeclarer = players.find(p => p.id === lastDeclarerId);
 
-  // 自分以外のプレイヤー（脱落していない）
+  // アクティブなプレイヤー（脱落していない）
   const activePlayers = players.filter(p => !p.isEliminated);
-  const otherPlayers = activePlayers.filter(p => p.id !== controlledPlayerId);
-  const myPlayer = players.find(p => p.id === controlledPlayerId);
 
   // 宣言可能な数字の範囲を計算
   const minDeclareValue = (currentDeclaredValue ?? 0) + 1;
@@ -71,14 +67,9 @@ export const GamePlayPhase = ({
     onCallJackal(controlledPlayerId);
   };
 
-  // プレイヤーのカードを取得（自分のは見えない）
+  // プレイヤーのカードを取得
   const getPlayerCard = (player: Player): CardType | undefined => {
     return dealtCards[player.id];
-  };
-
-  // ターン順での位置を取得
-  const getTurnPosition = (pid: string): number => {
-    return turnOrder.indexOf(pid);
   };
 
   return (
@@ -161,62 +152,45 @@ export const GamePlayPhase = ({
           )}
         </div>
 
-        {/* 他プレイヤーのカード表示 */}
+        {/* 全プレイヤーのカード表示（ターン順で左から並べる） */}
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
-          <h3 className="text-slate-400 text-sm mb-3 text-center">他のプレイヤー</h3>
+          <h3 className="text-slate-400 text-sm mb-3 text-center">プレイヤーカード</h3>
           <div className="flex flex-wrap justify-center gap-4">
-            {otherPlayers.map((player) => {
-              const card = getPlayerCard(player);
-              const isCurrent = player.id === currentTurnPlayerId;
-              const turnPos = getTurnPosition(player.id);
+            {turnOrder
+              .map(pid => activePlayers.find(p => p.id === pid))
+              .filter((p): p is Player => p !== undefined)
+              .map((player) => {
+                const card = getPlayerCard(player);
+                const isCurrent = player.id === currentTurnPlayerId;
+                const isMe = player.id === controlledPlayerId;
 
-              return (
-                <div
-                  key={player.id}
-                  className={`flex flex-col items-center p-3 rounded-lg transition-all ${
-                    isCurrent ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-slate-700/50'
-                  }`}
-                >
-                  <Card card={card} size="md" highlighted={isCurrent} />
-                  <div className="mt-2 text-center">
-                    <div className="text-white text-sm font-medium truncate max-w-20">
-                      {player.name}
-                    </div>
-                    <div className="flex items-center justify-center gap-0.5 mt-1">
-                      {Array.from({ length: player.life }).map((_, i) => (
-                        <Heart key={i} className="w-3 h-3 text-red-400 fill-red-400" />
-                      ))}
-                    </div>
-                    <div className="text-slate-500 text-xs mt-1">
-                      #{turnPos + 1}
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex flex-col items-center p-3 rounded-lg transition-all ${
+                      isCurrent ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-slate-700/50'
+                    }`}
+                  >
+                    <Card
+                      card={card}
+                      hidden={isMe}
+                      size="md"
+                      highlighted={isCurrent}
+                    />
+                    <div className="mt-2 text-center">
+                      <div className={`text-sm font-medium truncate max-w-20 ${isMe ? 'text-yellow-300' : 'text-white'}`}>
+                        {player.name}
+                        {isMe && ' (自分)'}
+                      </div>
+                      <div className="flex items-center justify-center gap-0.5 mt-1">
+                        {Array.from({ length: player.life }).map((_, i) => (
+                          <Heart key={i} className="w-3 h-3 text-red-400 fill-red-400" />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 自分のカード（見えない） */}
-        <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
-          <h3 className="text-slate-400 text-sm mb-3 text-center">あなたのカード</h3>
-          <div className="flex justify-center">
-            <div className={`flex flex-col items-center p-3 rounded-lg ${
-              isMyTurn ? 'bg-yellow-500/20 ring-2 ring-yellow-500' : 'bg-slate-700/50'
-            }`}>
-              <Card hidden size="lg" highlighted={isMyTurn} />
-              <div className="mt-2 text-center">
-                <div className="text-white text-sm font-medium">{myPlayer?.name ?? playerName}</div>
-                <div className="flex items-center justify-center gap-0.5 mt-1">
-                  {Array.from({ length: myPlayer?.life ?? 0 }).map((_, i) => (
-                    <Heart key={i} className="w-3 h-3 text-red-400 fill-red-400" />
-                  ))}
-                </div>
-                <div className="text-slate-500 text-xs mt-1">
-                  #{getTurnPosition(controlledPlayerId) + 1}
-                </div>
-              </div>
-            </div>
+                );
+              })}
           </div>
         </div>
 
