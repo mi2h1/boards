@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, FlaskConical } from 'lucide-react';
 import { Card } from './Card';
 import type { GameState, Player, Card as CardType } from '../types/game';
@@ -51,6 +51,13 @@ export const GamePlayPhase = ({
 
   // 宣言可能な最小値
   const minDeclareValue = (currentDeclaredValue ?? 0) + 1;
+
+  // 自分のターンになったら最小値を自動入力
+  useEffect(() => {
+    if (isMyTurn) {
+      setInputValue(String(minDeclareValue));
+    }
+  }, [isMyTurn, minDeclareValue]);
 
   const handleDeclare = () => {
     const value = parseInt(inputValue, 10);
