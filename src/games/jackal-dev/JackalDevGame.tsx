@@ -356,6 +356,7 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
         gameState={gameState}
         playerId={playerId ?? ''}
         onBackToLobby={handleBackToLobby}
+        onLeaveRoom={leaveRoom}
       />
     );
   }

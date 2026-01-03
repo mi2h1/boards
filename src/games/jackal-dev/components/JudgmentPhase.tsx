@@ -23,6 +23,10 @@ export const JudgmentPhase = ({
   const initialLife = settings.initialLife;
   const [stage, setStage] = useState<AnimationStage>('jackal');
 
+  // 残りのアクティブプレイヤー数
+  const activePlayers = players.filter(p => !p.isEliminated);
+  const isGameOver = activePlayers.length <= 1;
+
   // アニメーションのタイミング制御
   useEffect(() => {
     if (!judgmentResult) return;
@@ -45,6 +49,17 @@ export const JudgmentPhase = ({
       timers.forEach(timer => clearTimeout(timer));
     };
   }, [judgmentResult]);
+
+  // ゲーム終了時の自動遷移
+  useEffect(() => {
+    if (stage !== 'done' || !isGameOver) return;
+
+    const timer = setTimeout(() => {
+      onNextRound(); // これがgame_endに遷移させる
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [stage, isGameOver, onNextRound]);
 
   if (!judgmentResult) {
     return (
@@ -273,19 +288,28 @@ export const JudgmentPhase = ({
         </div>
 
         {/* アクションボタン */}
-        <div className={`flex gap-3 ${stage !== 'done' ? hidden : fadeIn}`}>
-          <button
-            onClick={onLeaveRoom}
-            className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
-          >
-            退出
-          </button>
-          <button
-            onClick={onNextRound}
-            className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg text-white font-bold transition-all"
-          >
-            次のラウンドへ
-          </button>
+        <div className={`${stage !== 'done' ? hidden : fadeIn}`}>
+          {isGameOver ? (
+            <div className="text-center">
+              <div className="text-slate-400 mb-2">ゲーム終了</div>
+              <div className="text-white text-lg">結果画面へ移動中...</div>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={onLeaveRoom}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white transition-colors"
+              >
+                退出
+              </button>
+              <button
+                onClick={onNextRound}
+                className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg text-white font-bold transition-all"
+              >
+                次のラウンドへ
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

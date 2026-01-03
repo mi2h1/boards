@@ -5,12 +5,14 @@ interface GameEndPhaseProps {
   gameState: GameState;
   playerId: string;
   onBackToLobby: () => void;
+  onLeaveRoom: () => void;
 }
 
 export const GameEndPhase = ({
   gameState,
   playerId,
   onBackToLobby,
+  onLeaveRoom,
 }: GameEndPhaseProps) => {
   const { players, round, winnerId } = gameState;
 
@@ -50,19 +52,23 @@ export const GameEndPhase = ({
           <p className="text-slate-400">全{round}ラウンド</p>
         </div>
 
-        {/* 勝者表示 */}
-        <div className={`rounded-xl p-6 mb-6 text-center ${
+        {/* 勝者表示（横並び） */}
+        <div className={`rounded-xl p-4 mb-6 ${
           isWinnerMe ? 'bg-yellow-500/20' : 'bg-slate-800/80'
         }`}>
-          <Trophy className={`w-16 h-16 mx-auto mb-4 ${
-            isWinnerMe ? 'text-yellow-400' : 'text-yellow-500'
-          }`} />
-          <div className="text-slate-400 text-sm mb-1">勝者</div>
-          <div className={`text-3xl font-bold ${
-            isWinnerMe ? 'text-yellow-300' : 'text-white'
-          }`}>
-            {winner?.name}
-            {isWinnerMe && ' (あなた)'}
+          <div className="flex items-center gap-4">
+            <Trophy className={`w-12 h-12 flex-shrink-0 ${
+              isWinnerMe ? 'text-yellow-400' : 'text-yellow-500'
+            }`} />
+            <div>
+              <div className="text-slate-400 text-sm">勝者</div>
+              <div className={`text-2xl font-bold ${
+                isWinnerMe ? 'text-yellow-300' : 'text-white'
+              }`}>
+                {winner?.name}
+                {isWinnerMe && ' (あなた)'}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -106,12 +112,20 @@ export const GameEndPhase = ({
         </div>
 
         {/* アクションボタン */}
-        <button
-          onClick={onBackToLobby}
-          className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg text-white font-bold text-lg transition-all"
-        >
-          ロビーに戻る
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={onLeaveRoom}
+            className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-bold transition-colors"
+          >
+            退出
+          </button>
+          <button
+            onClick={onBackToLobby}
+            className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg text-white font-bold transition-all"
+          >
+            もう一度プレイ
+          </button>
+        </div>
       </div>
     </div>
   );
