@@ -62,7 +62,7 @@ export const GameStartTransition = ({ topic, onComplete }: GameStartTransitionPr
           <p className="text-white/60 text-lg mb-4">今回のお題は...</p>
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-12 py-8 mb-6">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              「{topic}」
+              {topic}
             </h1>
           </div>
           <p className="text-white/40 text-sm animate-pulse">
