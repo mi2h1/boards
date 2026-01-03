@@ -13,7 +13,6 @@ interface GamePlayPhaseProps {
   updateGameState: (state: Partial<GameState>) => void;
   // デバッグ用
   debugMode?: boolean;
-  debugLocalStates?: Record<string, LocalPlayerState>;
 }
 
 export const GamePlayPhase = ({
@@ -22,7 +21,6 @@ export const GamePlayPhase = ({
   playerId,
   updateGameState,
   debugMode = false,
-  debugLocalStates = {},
 }: GamePlayPhaseProps) => {
   const {
     players,
@@ -40,9 +38,6 @@ export const GamePlayPhase = ({
 
   // デバッグモードで操作中のプレイヤーを決定
   const controlledPlayerId = debugMode && debugControlledPlayerId ? debugControlledPlayerId : playerId;
-  const controlledLocalState = debugMode && debugControlledPlayerId
-    ? debugLocalStates[debugControlledPlayerId]
-    : localState;
 
   const isMyTurn = currentTurnPlayerId === controlledPlayerId;
   const currentPlayer = players.find(p => p.id === currentTurnPlayerId);
@@ -50,42 +45,27 @@ export const GamePlayPhase = ({
 
   // 攻撃処理
   const handleAttack = (char: string) => {
-    if (!isMyTurn || pendingAttack || !controlledLocalState) return;
+    if (!isMyTurn || pendingAttack) return;
 
     setPendingAttack(char);
 
-    // デバッグモードでは全員分のヒット判定を行う
+    // 全プレイヤーのヒット判定（Firebaseに保存されたnormalizedWordを使用）
     const allHits: AttackHit[] = [];
 
-    if (debugMode) {
-      // 全プレイヤーのヒット判定
-      players.forEach(p => {
-        if (p.isEliminated) return;
-        const playerLocalState = p.id === playerId ? localState : debugLocalStates[p.id];
-        if (!playerLocalState) return;
+    players.forEach(p => {
+      if (p.isEliminated) return;
+      if (!p.normalizedWord) return; // 言葉が設定されていない場合はスキップ
 
-        const positions = findCharacterPositions(playerLocalState.normalizedWord, char);
-        if (positions.length > 0) {
-          allHits.push({
-            playerId: p.id,
-            playerName: p.name,
-            positions,
-            characters: positions.map(pos => playerLocalState.normalizedWord[pos]),
-          });
-        }
-      });
-    } else {
-      // 通常モード: 自分の言葉へのヒット判定のみ
-      const myPositions = findCharacterPositions(controlledLocalState.normalizedWord, char);
-      if (myPositions.length > 0) {
+      const positions = findCharacterPositions(p.normalizedWord, char);
+      if (positions.length > 0) {
         allHits.push({
-          playerId: controlledPlayerId,
-          playerName: myPlayer?.name ?? '',
-          positions: myPositions,
-          characters: myPositions.map(pos => controlledLocalState.normalizedWord[pos]),
+          playerId: p.id,
+          playerName: p.name,
+          positions,
+          characters: positions.map(pos => p.normalizedWord[pos]),
         });
       }
-    }
+    });
 
     // 攻撃結果をFirebaseに送信
     const attackResult: AttackResult = {
@@ -242,39 +222,33 @@ export const GamePlayPhase = ({
             デバッグ: 全プレイヤーの言葉
           </h3>
           <div className="space-y-2">
-            {players.map((player) => {
-              const playerLocalState = player.id === playerId
-                ? localState
-                : debugLocalStates[player.id];
-
-              return (
-                <div key={player.id} className="flex items-center gap-3">
-                  <span className={`w-24 font-bold truncate ${player.isEliminated ? 'text-red-400 line-through' : 'text-white'}`}>
-                    {player.name}
-                  </span>
-                  <div className="flex gap-1">
-                    {playerLocalState ? (
-                      Array.from(playerLocalState.normalizedWord).map((char, i) => {
-                        const isRevealed = player.revealedPositions[i];
-                        return (
-                          <div
-                            key={i}
-                            className={`
-                              w-8 h-8 flex items-center justify-center rounded text-sm font-bold
-                              ${isRevealed ? 'bg-red-500/50 text-white' : 'bg-white/20 text-white'}
-                            `}
-                          >
-                            {char}
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span className="text-white/40 text-sm">（未設定）</span>
-                    )}
-                  </div>
+            {players.map((player) => (
+              <div key={player.id} className="flex items-center gap-3">
+                <span className={`w-24 font-bold truncate ${player.isEliminated ? 'text-red-400 line-through' : 'text-white'}`}>
+                  {player.name}
+                </span>
+                <div className="flex gap-1">
+                  {player.normalizedWord ? (
+                    Array.from(player.normalizedWord).map((char, i) => {
+                      const isRevealed = player.revealedPositions[i];
+                      return (
+                        <div
+                          key={i}
+                          className={`
+                            w-8 h-8 flex items-center justify-center rounded text-sm font-bold
+                            ${isRevealed ? 'bg-red-500/50 text-white' : 'bg-white/20 text-white'}
+                          `}
+                        >
+                          {char}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <span className="text-white/40 text-sm">（未設定）</span>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}

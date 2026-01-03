@@ -68,13 +68,14 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
     // ローカル状態を保存
     setLocalState({ originalWord, normalizedWord });
 
-    // Firebaseにプレイヤーの準備完了を通知
+    // Firebaseにプレイヤーの準備完了を通知（normalizedWordも保存）
     const updatedPlayers = players.map(p => {
       if (p.id === playerId) {
         return {
           ...p,
           isReady: true,
           wordLength: normalizedWord.length,
+          normalizedWord, // Firebaseに保存してヒット判定に使用
           revealedPositions: new Array(normalizedWord.length).fill(false),
           revealedCharacters: new Array(normalizedWord.length).fill(''),
         };
@@ -100,13 +101,14 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
       setLocalState({ originalWord, normalizedWord });
     }
 
-    // Firebaseにプレイヤーの準備完了を通知
+    // Firebaseにプレイヤーの準備完了を通知（normalizedWordも保存）
     const updatedPlayers = players.map(p => {
       if (p.id === targetPlayerId) {
         return {
           ...p,
           isReady: true,
           wordLength: normalizedWord.length,
+          normalizedWord, // Firebaseに保存してヒット判定に使用
           revealedPositions: new Array(normalizedWord.length).fill(false),
           revealedCharacters: new Array(normalizedWord.length).fill(''),
         };
@@ -205,7 +207,6 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
             isHost={isHost}
             updateGameState={updateGameState}
             debugMode={debugMode}
-            debugLocalStates={debugLocalStates}
           />
         )}
 

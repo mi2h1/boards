@@ -17,6 +17,7 @@ export interface Player {
   id: string;
   name: string;
   wordLength: number; // 言葉の文字数（他プレイヤーに見える）
+  normalizedWord: string; // 正規化後の言葉（ヒット判定用、Firebase保存）
   revealedPositions: boolean[]; // 各位置が公開されているか
   revealedCharacters: string[]; // 公開された文字（位置に対応）
   isEliminated: boolean; // 脱落したか
@@ -86,6 +87,7 @@ export const createInitialPlayer = (id: string, name: string): Player => ({
   id,
   name,
   wordLength: 0,
+  normalizedWord: '',
   revealedPositions: [],
   revealedCharacters: [],
   isEliminated: false,
