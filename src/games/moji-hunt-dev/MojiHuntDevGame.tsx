@@ -375,13 +375,17 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
             playerId={playerId ?? ''}
             isHost={isHost}
             onPlayAgain={() => {
+              // 新しいお題を選出
+              const newTopic = getRandomTopic();
+              setTransitionTopic(newTopic);
+              setShowTransition(true);
+
+              // ローカル状態をリセット
               setLocalState(null);
               setDebugLocalStates({});
               setIsStartingGame(false);
-              setShowTransition(false);
-              setTransitionTopic(null);
-              // プレイヤーをリセットしてロビーに戻る
-              // Firebaseはundefinedを許可しないので、eliminatedAtは含めない
+
+              // プレイヤーをリセットして直接word_inputへ
               const resetPlayers = players.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -392,12 +396,17 @@ export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
                 isEliminated: false,
                 isReady: false,
               }));
+
+              // ターン順をシャッフル
+              const playerIds = players.map(p => p.id);
+              const shuffledOrder = [...playerIds].sort(() => Math.random() - 0.5);
+
               updateGameState({
-                phase: 'waiting',
+                phase: 'word_input',
                 players: resetPlayers,
-                currentTopic: '',
-                currentTurnPlayerId: null,
-                turnOrder: [],
+                currentTopic: newTopic,
+                currentTurnPlayerId: shuffledOrder[0],
+                turnOrder: shuffledOrder,
                 usedCharacters: [],
                 attackHistory: [],
                 lastAttackHadHit: false,
