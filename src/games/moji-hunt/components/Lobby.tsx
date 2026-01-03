@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Crown, FlaskConical } from 'lucide-react';
 import type { Player, GameSettings, TopicCategory } from '../types/game';
 import { TOPIC_LABELS } from '../types/game';
@@ -41,8 +41,9 @@ export const Lobby = ({
   debugMode = false,
   onAddTestPlayer,
 }: LobbyProps) => {
-  const [roomCodeInput, setRoomCodeInput] = useState('');
   const [showCopiedToast, setShowCopiedToast] = useState(false);
+  const roomCodeInputRef = useRef<HTMLInputElement>(null);
+  const [canJoin, setCanJoin] = useState(false);
 
   const copyRoomCode = () => {
     if (roomCode) {
@@ -244,46 +245,33 @@ export const Lobby = ({
             {/* ルーム参加 */}
             <div className="space-y-3">
               <input
+                ref={roomCodeInputRef}
                 type="text"
-                value={roomCodeInput}
-                onChange={(e) => {
-                  // IMEのコンポジション中は無視
-                  if ((e.nativeEvent as InputEvent).isComposing) return;
-                  // 英数字のみ抽出して大文字に変換、4文字まで
-                  const filtered = e.target.value
+                onInput={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  // 英数字のみ、大文字に変換、4文字まで
+                  const filtered = input.value
                     .toUpperCase()
                     .replace(/[^A-Z0-9]/g, '')
                     .slice(0, 4);
-                  setRoomCodeInput(filtered);
-                }}
-                onCompositionEnd={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  const filtered = target.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, '')
-                    .slice(0, 4);
-                  setRoomCodeInput(filtered);
-                }}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const pasted = e.clipboardData.getData('text');
-                  const filtered = pasted
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, '')
-                    .slice(0, 4);
-                  setRoomCodeInput(filtered);
+                  input.value = filtered;
+                  setCanJoin(filtered.length === 4);
                 }}
                 placeholder="ルームコードを入力"
                 className="w-full px-4 py-3 bg-slate-700 text-white text-center text-xl
                   font-mono tracking-widest rounded-lg uppercase
                   focus:outline-none focus:ring-2 focus:ring-pink-500"
+                maxLength={8}
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
               />
               <button
-                onClick={() => onJoinRoom(roomCodeInput)}
-                disabled={isLoading || roomCodeInput.length !== 4}
+                onClick={() => {
+                  const code = roomCodeInputRef.current?.value ?? '';
+                  if (code.length === 4) onJoinRoom(code);
+                }}
+                disabled={isLoading || !canJoin}
                 className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500
                   hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600
                   rounded-lg text-white font-bold transition-all"
