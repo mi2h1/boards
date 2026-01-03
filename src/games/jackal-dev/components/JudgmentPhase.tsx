@@ -11,7 +11,7 @@ interface JudgmentPhaseProps {
 }
 
 // アニメーションのステージ
-type AnimationStage = 'jackal' | 'values' | 'result' | 'cards' | 'done';
+type AnimationStage = 'jackal' | 'declared' | 'total' | 'result' | 'cards' | 'done';
 
 export const JudgmentPhase = ({
   gameState,
@@ -29,14 +29,16 @@ export const JudgmentPhase = ({
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     // ステージ1: ジャッカル宣言（即座に表示）
-    // ステージ2: 宣言数字 + 場の合計（1秒後）
-    timers.push(setTimeout(() => setStage('values'), 1000));
-    // ステージ3: 結果インフォボード（2秒後）
-    timers.push(setTimeout(() => setStage('result'), 2000));
-    // ステージ4: カード公開（3秒後）
-    timers.push(setTimeout(() => setStage('cards'), 3000));
-    // ステージ5: 完了（3.5秒後）
-    timers.push(setTimeout(() => setStage('done'), 3500));
+    // ステージ2: 宣言数字（1秒後）
+    timers.push(setTimeout(() => setStage('declared'), 1000));
+    // ステージ3: 場の合計（2秒後）
+    timers.push(setTimeout(() => setStage('total'), 2000));
+    // ステージ4: 判定結果（3秒後）
+    timers.push(setTimeout(() => setStage('result'), 3000));
+    // ステージ5: カード公開（4秒後）
+    timers.push(setTimeout(() => setStage('cards'), 4000));
+    // ステージ6: 完了（5秒後）
+    timers.push(setTimeout(() => setStage('done'), 5000));
 
     return () => {
       timers.forEach(timer => clearTimeout(timer));
@@ -68,6 +70,9 @@ export const JudgmentPhase = ({
   const loser = players.find(p => p.id === loserId);
   const isLoserMe = loserId === playerId;
 
+  // ジャッカル成功 = 宣言 > 場の合計 (reason === 'over')
+  const isJackalSuccess = reason === 'over';
+
   // ターン順でカードをソート
   const sortedCardDetails = [...cardDetails].sort((a, b) => {
     const aIndex = turnOrder.indexOf(a.playerId);
@@ -79,12 +84,36 @@ export const JudgmentPhase = ({
   const fadeIn = 'animate-[fadeIn_0.5s_ease-out_forwards]';
   const hidden = 'opacity-0';
 
+  // 宣言数字ボックスのハイライトクラス（判定後）
+  const getDeclaredHighlight = () => {
+    if (!['result', 'cards', 'done'].includes(stage)) return '';
+    return isJackalSuccess
+      ? 'ring-4 ring-red-500 bg-red-900/60'
+      : 'ring-4 ring-green-500 bg-green-900/60';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 p-4">
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+          20%, 40%, 60%, 80% { transform: translateX(3px); }
+        }
+        @keyframes heartBreak {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .shake {
+          animation: shake 0.5s ease-in-out;
+        }
+        .heart-break {
+          animation: heartBreak 0.5s ease-in-out;
         }
       `}</style>
 
@@ -106,10 +135,12 @@ export const JudgmentPhase = ({
           </div>
         </div>
 
-        {/* 宣言数字 + 場の合計（横並び） */}
-        <div className={`flex justify-center gap-4 mb-6 ${stage === 'jackal' ? hidden : fadeIn}`}>
+        {/* 宣言数字 + 場の合計（横並び、別々にフェードイン） */}
+        <div className="flex justify-center gap-4 mb-6">
           {/* 宣言された数字 */}
-          <div className="bg-slate-800/80 rounded-xl p-4 flex-1 max-w-48">
+          <div className={`rounded-xl p-4 flex-1 max-w-48 transition-all duration-300 ${
+            stage === 'jackal' ? hidden : fadeIn
+          } ${getDeclaredHighlight() || 'bg-slate-800/80'}`}>
             <div className="text-slate-400 text-sm mb-1 text-center">
               {declarerName}の宣言
             </div>
@@ -119,7 +150,9 @@ export const JudgmentPhase = ({
           </div>
 
           {/* 場の合計 */}
-          <div className="bg-slate-800/80 rounded-xl p-4 flex-1 max-w-48">
+          <div className={`bg-slate-800/80 rounded-xl p-4 flex-1 max-w-48 ${
+            ['jackal', 'declared'].includes(stage) ? hidden : fadeIn
+          }`}>
             <div className="text-slate-400 text-sm mb-1 text-center">場の合計</div>
             <div className="text-4xl font-bold text-white text-center">
               {totalValue}
@@ -129,28 +162,33 @@ export const JudgmentPhase = ({
           </div>
         </div>
 
-        {/* 結果インフォボード */}
-        <div className={`text-center mb-6 ${['jackal', 'values'].includes(stage) ? hidden : fadeIn}`}>
+        {/* 判定インフォボード */}
+        <div className={`text-center mb-6 ${['jackal', 'declared', 'total'].includes(stage) ? hidden : fadeIn}`}>
           <div className={`rounded-xl p-4 inline-block ${
-            reason === 'over' ? 'bg-red-900/60' : 'bg-green-900/60'
+            isJackalSuccess ? 'bg-green-900/60' : 'bg-red-900/60'
           }`}>
             <div className="text-2xl font-bold">
-              {reason === 'over' ? (
-                <span className="text-red-300">宣言オーバー！</span>
+              {isJackalSuccess ? (
+                <span className="text-green-300">ジャッカル成功！</span>
               ) : (
-                <span className="text-green-300">宣言成功！</span>
+                <span className="text-red-300">ジャッカル失敗！</span>
               )}
             </div>
           </div>
         </div>
 
         {/* カード公開 */}
-        <div className={`mb-6 ${['jackal', 'values', 'result'].includes(stage) ? hidden : fadeIn}`}>
+        <div className={`mb-6 ${['jackal', 'declared', 'total', 'result'].includes(stage) ? hidden : fadeIn}`}>
           <div className="bg-slate-800/60 rounded-xl p-4">
             <div className="flex flex-wrap justify-center gap-4">
               {sortedCardDetails.map((detail) => {
                 const isMe = detail.playerId === playerId;
-                const isLoser = detail.playerId === loserId;
+                const isLoserPlayer = detail.playerId === loserId;
+                const player = players.find(p => p.id === detail.playerId);
+                // 敗者のライフは既に減算されているので、表示用に調整
+                const currentLife = player?.life ?? 0;
+                // 敗者は現在のライフ + 1（ダメージ前）を表示して、1つをダメージ表示
+                const displayLife = isLoserPlayer ? currentLife + 1 : currentLife;
 
                 return (
                   <div
@@ -158,16 +196,38 @@ export const JudgmentPhase = ({
                     className={`flex flex-col items-center p-3 rounded-lg transition-all ${
                       isMe
                         ? 'bg-yellow-500/30 ring-2 ring-yellow-400'
-                        : isLoser
+                        : isLoserPlayer
                           ? 'bg-red-900/30'
                           : 'bg-slate-700/50'
-                    }`}
+                    } ${isLoserPlayer && stage === 'cards' ? 'shake' : ''}`}
                   >
                     <Card card={detail.card} size="md" highlighted={isMe} />
                     <div className="mt-2 text-center">
                       <div className={`text-sm font-medium ${isMe ? 'text-yellow-300' : 'text-white'}`}>
                         {detail.playerName}
                         {isMe && ' (自分)'}
+                      </div>
+                      {/* HP表示 */}
+                      <div className="flex items-center justify-center gap-0.5 mt-1">
+                        {Array.from({ length: displayLife }).map((_, i) => {
+                          // 敗者の最後のハートはダメージ表示（中抜き）
+                          const isDamagedHeart = isLoserPlayer && i === displayLife - 1;
+                          return isDamagedHeart ? (
+                            <Heart
+                              key={i}
+                              className={`w-4 h-4 text-red-400 ${stage === 'cards' ? 'heart-break' : ''}`}
+                              strokeWidth={2}
+                            />
+                          ) : (
+                            <Heart
+                              key={i}
+                              className="w-4 h-4 text-red-400 fill-red-400"
+                            />
+                          );
+                        })}
+                        {displayLife === 0 && (
+                          <span className="text-red-400 text-xs font-bold">脱落</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -188,20 +248,13 @@ export const JudgmentPhase = ({
         </div>
 
         {/* 敗者表示 */}
-        <div className={`text-center mb-6 ${['jackal', 'values', 'result'].includes(stage) ? hidden : fadeIn}`}>
+        <div className={`text-center mb-6 ${['jackal', 'declared', 'total', 'result'].includes(stage) ? hidden : fadeIn}`}>
           <div className={`rounded-xl p-4 ${isLoserMe ? 'bg-red-900/50' : 'bg-slate-800/80'}`}>
             <div className={`text-xl font-bold ${isLoserMe ? 'text-red-300' : 'text-white'}`}>
               {loserName} がライフ -1
             </div>
-            {loser && (
-              <div className="flex items-center justify-center gap-1 mt-2">
-                {Array.from({ length: loser.life }).map((_, i) => (
-                  <Heart key={i} className="w-5 h-5 text-red-400 fill-red-400" />
-                ))}
-                {loser.life === 0 && (
-                  <span className="text-red-400 font-bold ml-2">脱落！</span>
-                )}
-              </div>
+            {loser && loser.life === 0 && (
+              <div className="text-red-400 font-bold mt-1">脱落！</div>
             )}
           </div>
         </div>
