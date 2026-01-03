@@ -195,4 +195,5 @@ export const createInitialGameState = (): Omit<GameState, 'players'> => ({
   attackHistory: [],
   lastAttackHadHit: false,
   winnerId: null,
+  topicChangeVotes: [],
 });
