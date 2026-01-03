@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, FlaskConical } from 'lucide-react';
 import { usePlayer } from '../../shared/hooks/usePlayer';
 import { useRoom } from './hooks/useRoom';
 import { Lobby } from './components/Lobby';
@@ -14,6 +14,12 @@ interface MojiGuessGameProps {
 }
 
 export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
+  // デバッグモード検出（URLパラメータ ?debug=true）
+  const debugMode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('debug') === 'true';
+  }, []);
+
   const { playerId, playerName } = usePlayer();
   const {
     roomCode,
@@ -26,10 +32,14 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
     leaveRoom,
     updateGameState,
     updateSettings,
+    addTestPlayer,
   } = useRoom(playerId, playerName);
 
   // ローカルで保持する秘密の言葉
   const [localState, setLocalState] = useState<LocalPlayerState | null>(null);
+
+  // デバッグ用: 全プレイヤーの言葉を保持
+  const [debugLocalStates, setDebugLocalStates] = useState<Record<string, LocalPlayerState>>({});
 
   const gameState = roomData?.gameState;
   const players = gameState?.players ?? [];
@@ -61,6 +71,38 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
     // Firebaseにプレイヤーの準備完了を通知
     const updatedPlayers = players.map(p => {
       if (p.id === playerId) {
+        return {
+          ...p,
+          isReady: true,
+          wordLength: normalizedWord.length,
+          revealedPositions: new Array(normalizedWord.length).fill(false),
+          revealedCharacters: new Array(normalizedWord.length).fill(''),
+        };
+      }
+      return p;
+    });
+
+    updateGameState({ players: updatedPlayers });
+  };
+
+  // デバッグ用: 任意のプレイヤーの言葉を設定
+  const handleDebugWordSubmit = (targetPlayerId: string, originalWord: string, normalizedWord: string) => {
+    if (!gameState) return;
+
+    // デバッグ用ローカル状態を保存
+    setDebugLocalStates(prev => ({
+      ...prev,
+      [targetPlayerId]: { originalWord, normalizedWord },
+    }));
+
+    // 自分自身の場合は通常のlocalStateも更新
+    if (targetPlayerId === playerId) {
+      setLocalState({ originalWord, normalizedWord });
+    }
+
+    // Firebaseにプレイヤーの準備完了を通知
+    const updatedPlayers = players.map(p => {
+      if (p.id === targetPlayerId) {
         return {
           ...p,
           isReady: true,
@@ -107,6 +149,8 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
         onStartGame={handleStartGame}
         onUpdateSettings={updateSettings}
         onBack={handleBack}
+        debugMode={debugMode}
+        onAddTestPlayer={addTestPlayer}
       />
     );
   }
@@ -123,7 +167,15 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">文字ゲス</h1>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              文字ゲス
+              {debugMode && (
+                <span className="bg-orange-600 text-white px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
+                  <FlaskConical className="w-3 h-3" />
+                  DEBUG
+                </span>
+              )}
+            </h1>
             {roomCode && (
               <p className="text-white/60 text-sm">
                 お題: {TOPIC_LABELS[settings.topic]}
@@ -139,16 +191,21 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
             currentPlayerId={playerId ?? ''}
             isReady={localState !== null}
             onSubmitWord={handleWordSubmit}
+            debugMode={debugMode}
+            debugLocalStates={debugLocalStates}
+            onDebugWordSubmit={handleDebugWordSubmit}
           />
         )}
 
-        {phase === 'playing' && gameState && localState && (
+        {phase === 'playing' && gameState && (localState || debugMode) && (
           <GamePlayPhase
             gameState={gameState}
             localState={localState}
             playerId={playerId ?? ''}
             isHost={isHost}
             updateGameState={updateGameState}
+            debugMode={debugMode}
+            debugLocalStates={debugLocalStates}
           />
         )}
 
@@ -160,6 +217,7 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
             isHost={isHost}
             onPlayAgain={() => {
               setLocalState(null);
+              setDebugLocalStates({});
               // プレイヤーをリセットしてロビーに戻る
               const resetPlayers = players.map(p => ({
                 ...p,

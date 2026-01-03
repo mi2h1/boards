@@ -285,6 +285,31 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
     }
   }, [roomCode, roomData]);
 
+  // デバッグ用: テストプレイヤーを追加
+  const addTestPlayer = useCallback(async () => {
+    if (!roomCode || !roomData) return;
+
+    const players = roomData.gameState.players;
+    if (players.length >= 5) return;
+
+    // 既存のテストプレイヤー数をカウント
+    const testPlayerCount = players.filter(p => p.name.startsWith('テスト')).length;
+    const testNumber = testPlayerCount + 1;
+
+    const testPlayer = createInitialPlayer(
+      `test-${Date.now()}-${testNumber}`,
+      `テスト${testNumber}`
+    );
+
+    try {
+      await update(ref(db, `moji-guess-rooms/${roomCode}/gameState`), {
+        players: [...players, testPlayer],
+      });
+    } catch (err) {
+      console.error('Add test player error:', err);
+    }
+  }, [roomCode, roomData]);
+
   const isHost = roomData?.hostId === playerId;
   const currentPlayer = roomData?.gameState.players.find(p => p.id === playerId);
 
@@ -300,5 +325,6 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
     leaveRoom,
     updateGameState,
     updateSettings,
+    addTestPlayer,
   };
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown } from 'lucide-react';
+import { Crown, FlaskConical } from 'lucide-react';
 import type { Player, GameSettings, TopicCategory } from '../types/game';
 import { TOPIC_LABELS } from '../types/game';
 
@@ -18,6 +18,9 @@ interface LobbyProps {
   onStartGame: () => void;
   onUpdateSettings: (settings: Partial<GameSettings>) => void;
   onBack?: () => void;
+  // デバッグ用
+  debugMode?: boolean;
+  onAddTestPlayer?: () => void;
 }
 
 export const Lobby = ({
@@ -35,6 +38,8 @@ export const Lobby = ({
   onStartGame,
   onUpdateSettings,
   onBack,
+  debugMode = false,
+  onAddTestPlayer,
 }: LobbyProps) => {
   const [roomCodeInput, setRoomCodeInput] = useState('');
   const [showCopiedToast, setShowCopiedToast] = useState(false);
@@ -47,7 +52,8 @@ export const Lobby = ({
     }
   };
 
-  const canStartGame = players.length >= 2;
+  // デバッグモードでは1人でもゲーム開始可能
+  const canStartGame = debugMode ? players.length >= 1 : players.length >= 2;
 
   // ルーム待機画面
   if (roomCode) {
@@ -56,7 +62,15 @@ export const Lobby = ({
         <div className="min-h-screen bg-black/20 flex items-center justify-center p-4">
           <div className="bg-slate-800/95 rounded-xl p-6 max-w-2xl w-full">
             {/* タイトル */}
-            <h1 className="text-3xl font-bold text-white text-center mb-4">文字ゲス</h1>
+            <h1 className="text-3xl font-bold text-white text-center mb-4 flex items-center justify-center gap-2">
+              文字ゲス
+              {debugMode && (
+                <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded inline-flex items-center gap-1">
+                  <FlaskConical className="w-3 h-3" />
+                  デバッグモード
+                </span>
+              )}
+            </h1>
 
             {/* ルームコード */}
             <div className="bg-slate-700 rounded-lg p-4 mb-6 text-center relative">
@@ -78,29 +92,55 @@ export const Lobby = ({
               )}
             </div>
 
-            {/* ゲーム開始ボタン */}
-            <div className="mb-4">
-              {isHost ? (
+            {/* デバッグ用: ゲーム開始ボタン（通常ボタンの上に配置） */}
+            {debugMode && isHost && (
+              <div className="mb-4">
                 <button
                   onClick={onStartGame}
-                  disabled={!canStartGame}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500
-                    hover:from-pink-600 hover:to-orange-600 disabled:from-gray-500 disabled:to-gray-600
-                    rounded-lg text-white font-bold transition-all"
+                  disabled={players.length < 1}
+                  className="w-full px-6 py-3 bg-orange-600 hover:bg-orange-700
+                    disabled:bg-gray-600 rounded-lg text-white font-bold transition-all"
                 >
-                  {canStartGame ? 'ゲーム開始' : '2人以上で開始できます'}
+                  {players.length >= 1 ? 'ゲーム開始（デバッグ）' : 'プレイヤーを追加してください'}
                 </button>
-              ) : (
-                <div className="text-center text-slate-400 py-3">
-                  ホストの開始を待っています...
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* ゲーム開始ボタン（通常モード・ホストのみ） */}
+            {!debugMode && (
+              <div className="mb-4">
+                {isHost ? (
+                  <button
+                    onClick={onStartGame}
+                    disabled={!canStartGame}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-orange-500
+                      hover:from-pink-600 hover:to-orange-600 disabled:from-gray-500 disabled:to-gray-600
+                      rounded-lg text-white font-bold transition-all"
+                  >
+                    {canStartGame ? 'ゲーム開始' : '2人以上で開始できます'}
+                  </button>
+                ) : (
+                  <div className="text-center text-slate-400 py-3">
+                    ホストの開始を待っています...
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 参加者とお題設定（2列レイアウト） */}
             <div className="grid grid-cols-2 gap-4 mb-4">
-              {/* 左列: プレイヤー一覧 */}
+              {/* 左列: プレイヤー追加（デバッグ時）+ プレイヤー一覧 */}
               <div>
+                {/* デバッグ用: テストプレイヤー追加 */}
+                {debugMode && onAddTestPlayer && players.length < 5 && (
+                  <button
+                    onClick={onAddTestPlayer}
+                    className="w-full mb-2 px-3 py-2 bg-orange-600 hover:bg-orange-700
+                      rounded-lg text-white text-sm font-bold transition-all"
+                  >
+                    + テストプレイヤーを追加
+                  </button>
+                )}
                 <div className="text-slate-400 text-sm mb-2">
                   参加者 ({players.length}/5)
                 </div>
