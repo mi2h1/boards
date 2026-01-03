@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ref, set, onValue, off, update, remove, get } from 'firebase/database';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ref, set, onValue, off, update, remove, get, onDisconnect } from 'firebase/database';
 import { db } from '../../../lib/firebase';
 import type { GameState, Player, RoomData, GameSettings, AttackResult, AttackHit } from '../types/game';
 import { createInitialPlayer, createInitialGameState, DEFAULT_SETTINGS } from '../types/game';
@@ -66,11 +66,82 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const presenceRef = useRef<ReturnType<typeof ref> | null>(null);
 
   // マウント時に古いルームをクリーンアップ
   useEffect(() => {
     cleanupOldRooms();
   }, []);
+
+  // プレゼンス（接続状態）の設定
+  useEffect(() => {
+    if (!roomCode || !playerId) {
+      // クリーンアップ
+      if (presenceRef.current) {
+        remove(presenceRef.current);
+        presenceRef.current = null;
+      }
+      return;
+    }
+
+    // presenceを設定
+    const myPresenceRef = ref(db, `moji-hunt-dev-rooms/${roomCode}/presence/${playerId}`);
+    presenceRef.current = myPresenceRef;
+
+    // オンラインとしてマーク
+    set(myPresenceRef, true);
+
+    // 切断時に自動でpresenceを削除
+    onDisconnect(myPresenceRef).remove();
+
+    return () => {
+      // コンポーネントアンマウント時にpresenceを削除
+      remove(myPresenceRef);
+      presenceRef.current = null;
+    };
+  }, [roomCode, playerId]);
+
+  // presenceの変更を監視してプレイヤーを削除
+  useEffect(() => {
+    if (!roomCode) return;
+
+    const presenceListRef = ref(db, `moji-hunt-dev-rooms/${roomCode}/presence`);
+
+    onValue(presenceListRef, async (snapshot) => {
+      const presenceData = snapshot.val() || {};
+      const onlinePlayerIds = Object.keys(presenceData);
+
+      // 現在のルームデータを取得
+      const roomRef = ref(db, `moji-hunt-dev-rooms/${roomCode}`);
+      const roomSnapshot = await get(roomRef);
+      if (!roomSnapshot.exists()) return;
+
+      const room = roomSnapshot.val();
+      const players = normalizeArray<Player>(room.gameState?.players);
+
+      // オフラインのプレイヤーを特定
+      const offlinePlayers = players.filter(p => !onlinePlayerIds.includes(p.id));
+
+      if (offlinePlayers.length > 0) {
+        // オフラインプレイヤーを削除
+        const remainingPlayers = players.filter(p => onlinePlayerIds.includes(p.id));
+
+        if (remainingPlayers.length === 0) {
+          // 全員いなくなったら部屋を削除
+          await remove(roomRef);
+        } else {
+          // プレイヤーリストを更新
+          await update(ref(db, `moji-hunt-dev-rooms/${roomCode}/gameState`), {
+            players: remainingPlayers,
+          });
+        }
+      }
+    });
+
+    return () => {
+      off(presenceListRef);
+    };
+  }, [roomCode]);
 
   // ルームのリアルタイム監視
   useEffect(() => {
