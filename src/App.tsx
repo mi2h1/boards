@@ -236,7 +236,12 @@ function App() {
           {/* ジャッカル */}
           <div className="bg-slate-800/80 rounded-xl overflow-hidden hover:ring-2 hover:ring-indigo-500 transition-all">
             <div className="h-40 bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <h3 className="text-4xl font-bold text-white">JACKAL</h3>
+              <img
+                src="/boards/images/vec_logo_jackal.svg"
+                alt="ジャッカル"
+                className="h-12"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </div>
             <div className="p-4">
               <h2 className="text-lg font-bold text-white mb-2">ジャッカル</h2>

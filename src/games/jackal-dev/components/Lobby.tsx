@@ -70,8 +70,13 @@ export const Lobby = ({
               >
                 <HelpCircle className="w-5 h-5" />
               </button>
-              <h1 className="text-3xl font-bold text-white">ジャッカル</h1>
-              <p className="text-white/60 text-sm mt-1">ブラフ＆心理戦ゲーム</p>
+              <img
+                src="/boards/images/vec_logo_jackal.svg"
+                alt="ジャッカル"
+                className="h-10 mx-auto"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
+              <p className="text-white/60 text-sm mt-2">ブラフ＆心理戦ゲーム</p>
               {debugMode && (
                 <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded inline-flex items-center gap-1 mt-2">
                   <FlaskConical className="w-3 h-3" />
@@ -225,8 +230,13 @@ export const Lobby = ({
 
           {/* タイトル */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-white">ジャッカル</h1>
-            <p className="text-white/60 text-sm mt-1">ブラフ＆心理戦ゲーム</p>
+            <img
+              src="/boards/images/vec_logo_jackal.svg"
+              alt="ジャッカル"
+              className="h-10 mx-auto"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+            <p className="text-white/60 text-sm mt-2">ブラフ＆心理戦ゲーム</p>
             {debugMode && (
               <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded inline-flex items-center gap-1 mt-2">
                 <FlaskConical className="w-3 h-3" />
