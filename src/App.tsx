@@ -1,14 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Gamepad2 } from 'lucide-react';
 import { usePlayer } from './shared/hooks/usePlayer';
 import { AoaGame } from './games/aoa/AoaGame';
 
 type GameType = 'none' | 'aoa' | 'moji-guess';
 
+// URL からゲームタイプを取得
+const getGameFromPath = (): GameType => {
+  // クエリパラメータ ?p= からリダイレクトされた場合
+  const params = new URLSearchParams(window.location.search);
+  const redirectPath = params.get('p');
+  if (redirectPath) {
+    // クエリパラメータをクリアして正しいURLに置き換え
+    const newPath = `/boards/${redirectPath}`;
+    window.history.replaceState({}, '', newPath);
+    if (redirectPath === 'aoa') return 'aoa';
+    if (redirectPath === 'moji-guess') return 'moji-guess';
+  }
+
+  // 通常のパスから取得
+  const path = window.location.pathname.replace('/boards', '').replace(/^\//, '');
+  if (path === 'aoa') return 'aoa';
+  if (path === 'moji-guess') return 'moji-guess';
+  return 'none';
+};
+
+// URL を更新
+const updatePath = (game: GameType) => {
+  const newPath = game === 'none' ? '/boards/' : `/boards/${game}`;
+  window.history.pushState({}, '', newPath);
+};
+
 function App() {
   const { playerName, setPlayerName, hasName, isLoading } = usePlayer();
   const [nameInput, setNameInput] = useState('');
-  const [selectedGame, setSelectedGame] = useState<GameType>('none');
+  const [selectedGame, setSelectedGame] = useState<GameType>(getGameFromPath);
+
+  // ブラウザの戻る/進むに対応
+  useEffect(() => {
+    const handlePopState = () => {
+      setSelectedGame(getGameFromPath());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // ゲーム選択時に URL を更新
+  const selectGame = (game: GameType) => {
+    setSelectedGame(game);
+    updatePath(game);
+  };
 
   // ローディング中
   if (isLoading) {
@@ -68,7 +109,7 @@ function App() {
 
   // ゲームが選択されている場合
   if (selectedGame === 'aoa') {
-    return <AoaGame onBack={() => setSelectedGame('none')} />;
+    return <AoaGame onBack={() => selectGame('none')} />;
   }
 
   // ゲーム選択画面
@@ -108,7 +149,7 @@ function App() {
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setSelectedGame('aoa')}
+                  onClick={() => selectGame('aoa')}
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-600
                     hover:from-cyan-600 hover:to-teal-700 rounded-lg text-white font-bold transition-all"
                 >

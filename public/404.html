@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // GitHub Pages SPA redirect
+      // /boards/aoa -> /boards/?path=aoa
+      const path = window.location.pathname;
+      const search = window.location.search;
+      const hash = window.location.hash;
+
+      // /boards 以下のパスを取得
+      const gamePath = path.replace('/boards', '').replace(/^\//, '');
+
+      if (gamePath) {
+        // パスをクエリパラメータとして渡してリダイレクト
+        window.location.replace('/boards/?p=' + gamePath + search + hash);
+      } else {
+        window.location.replace('/boards/' + search + hash);
+      }
+    </script>
+  </head>
+  <body>
+    Redirecting...
+  </body>
+</html>
