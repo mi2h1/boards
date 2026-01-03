@@ -18,7 +18,7 @@ interface MojiHuntDevGameProps {
 export const MojiHuntDevGame = ({ onBack }: MojiHuntDevGameProps) => {
   // ブラウザタブのタイトルを設定
   useEffect(() => {
-    document.title = 'もじはんと [DEV]';
+    document.title = 'もじはんとDEV';
     return () => { document.title = 'Game Board'; };
   }, []);
 

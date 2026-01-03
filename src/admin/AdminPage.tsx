@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Clock, RefreshCw, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useAdminRooms } from './hooks/useAdminRooms';
 import type { AdminRoom } from './hooks/useAdminRooms';
@@ -280,6 +280,12 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
 export const AdminPage = ({ onBack }: AdminPageProps) => {
   const { rooms, isLoading, deleteRoom, cleanupOldRooms, deleteAllRooms } = useAdminRooms();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // ブラウザタブのタイトルを設定
+  useEffect(() => {
+    document.title = 'Game Board - Admin Dashboard';
+    return () => { document.title = 'Game Board'; };
+  }, []);
 
   const aoaRooms = rooms.filter(r => r.gameType === 'aoa');
   const mojiHuntRooms = rooms.filter(r => r.gameType === 'moji-hunt');

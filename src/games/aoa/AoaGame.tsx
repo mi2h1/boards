@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { usePlayer } from '../../shared/hooks/usePlayer';
 import { useRoom } from './hooks/useRoom';
@@ -71,6 +71,13 @@ export function AoaGame({ onBack }: AoaGameProps) {
     updateGameState,
     updatePlayerDecision,
   });
+
+  // ブラウザタブのタイトルを設定
+  useEffect(() => {
+    const isIncanRule = roomData?.ruleSet?.type === 'incan_gold';
+    document.title = isIncanRule ? 'インカの黄金' : 'アトランティスの深淵';
+    return () => { document.title = 'Game Board'; };
+  }, [roomData?.ruleSet?.type]);
 
   // ローディング中
   if (isPlayerLoading) {

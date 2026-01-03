@@ -62,6 +62,13 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // ゲーム一覧画面のタイトルを設定
+  useEffect(() => {
+    if (selectedGame === 'none') {
+      document.title = 'Game Board';
+    }
+  }, [selectedGame]);
+
   // ゲーム選択時に URL を更新
   const selectGame = (game: GameType) => {
     setSelectedGame(game);
