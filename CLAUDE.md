@@ -53,7 +53,11 @@ src/
 │   ├── jackal/                # ジャッカル（本番）
 │   │   ├── JackalGame.tsx
 │   │   ├── components/
-│   │   │   └── Lobby.tsx
+│   │   │   ├── Lobby.tsx
+│   │   │   ├── GamePlayPhase.tsx
+│   │   │   ├── JudgmentPhase.tsx
+│   │   │   ├── GameEndPhase.tsx
+│   │   │   └── Card.tsx
 │   │   ├── hooks/
 │   │   │   └── useRoom.ts
 │   │   ├── lib/
@@ -83,16 +87,16 @@ src/
 
 ### ジャッカル (jackal)
 - パス: `/boards/jackal`（本番）、`/boards/jackal-dev`（開発版）
-- 状態: 開発中（ロビーまで実装）
+- 状態: 完成・稼働中
 - 概要: ブラフ＆心理戦カードゲーム（2〜10人）
 - 仕様: `docs/jackal-spec.md` 参照
-- 特徴: 自分のカードだけ見えない状態で宣言を繰り返す
+- 特徴: 自分のカードだけ見えない状態で場の合計値を推理
 
 ### 管理画面 (admin)
 - パス: `/boards/admin`
 - 概要: 全ゲームの部屋をリアルタイム監視
 - 機能:
-  - 部屋一覧表示（AOA / もじはんと / もじはんとDEV）
+  - 部屋一覧表示（AOA / もじはんと / ジャッカル + 各DEV版）
   - 部屋の詳細情報（プレイヤー、フェーズ、お題等）
   - もじはんとの文字パネル状況表示（50音グリッド）
   - 古い部屋の一括削除
