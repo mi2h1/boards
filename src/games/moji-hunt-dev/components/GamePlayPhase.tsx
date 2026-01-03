@@ -358,74 +358,75 @@ export const GamePlayPhase = ({
 
         {/* 右カラム: アナウンス + 50音ボード */}
         <div className="space-y-4 order-1 lg:order-2 lg:flex-1">
-          {/* 攻撃フェーズのアナウンス */}
-          {currentAttack ? (
-            <div className="bg-white/10 rounded-xl p-6 text-center">
-              {currentAttack.phase === 'selecting' ? (
-                <div className="space-y-2">
-                  <p className="text-white text-lg">
-                    <span className="font-bold text-pink-300">{currentAttack.attackerName}</span> が
-                  </p>
-                  <p className="text-4xl font-bold text-yellow-300 animate-pulse">
-                    「{currentAttack.targetChar}」
-                  </p>
-                  <p className="text-white text-lg">を選択！</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {(currentAttack.hits?.length ?? 0) > 0 ? (
-                    <>
-                      <p className="text-2xl font-bold text-red-400">ヒット！</p>
-                      <p className="text-white">
-                        {currentAttack.hits?.map(h => h.playerName).join('、')} に当たった！
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-2xl font-bold text-gray-400">ハズレ...</p>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* ターン表示 */}
-              <div className="bg-white/10 rounded-xl p-4 text-center">
-                {isMyTurn ? (
-                  <div className="flex items-center justify-center gap-2 text-pink-300">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-lg font-bold">
-                      あなたの番です！文字を選んで攻撃
-                    </span>
+          {/* アナウンスパネル（高さ固定） */}
+          <div className="bg-white/10 rounded-xl p-4 min-h-[140px] flex flex-col justify-center">
+            {currentAttack ? (
+              // 攻撃フェーズのアナウンス
+              <div className="text-center">
+                {currentAttack.phase === 'selecting' ? (
+                  <div className="space-y-1">
+                    <p className="text-white text-lg">
+                      <span className="font-bold text-pink-300">{currentAttack.attackerName}</span> が
+                    </p>
+                    <p className="text-4xl font-bold text-yellow-300 animate-pulse">
+                      「{currentAttack.targetChar}」
+                    </p>
+                    <p className="text-white text-lg">を選択！</p>
                   </div>
                 ) : (
-                  <div className="text-white/80">
-                    <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
+                  <div className="space-y-1">
+                    {(currentAttack.hits?.length ?? 0) > 0 ? (
+                      <>
+                        <p className="text-2xl font-bold text-red-400">ヒット！</p>
+                        <p className="text-white">
+                          {currentAttack.hits?.map(h => h.playerName).join('、')} に当たった！
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-400">ハズレ...</p>
+                    )}
                   </div>
-                )}
-                {lastAttackHadHit && !isMyTurn && currentPlayer && (
-                  <p className="text-yellow-300 text-sm mt-1">
-                    ヒット！ {currentPlayer.name} は続けて攻撃できます
-                  </p>
                 )}
               </div>
+            ) : (
+              // ターン表示 + 最新の攻撃結果
+              <div className="space-y-3">
+                <div className="text-center">
+                  {isMyTurn ? (
+                    <div className="flex items-center justify-center gap-2 text-pink-300">
+                      <Zap className="w-5 h-5" />
+                      <span className="text-lg font-bold">
+                        あなたの番です！文字を選んで攻撃
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-white/80">
+                      <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
+                    </div>
+                  )}
+                  {lastAttackHadHit && !isMyTurn && currentPlayer && (
+                    <p className="text-yellow-300 text-sm mt-1">
+                      ヒット！ {currentPlayer.name} は続けて攻撃できます
+                    </p>
+                  )}
+                </div>
 
-              {/* 最新の攻撃結果 */}
-              {latestAttack && (
-                <div className="bg-white/5 rounded-xl p-4">
-                  <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
-                    <span className="font-bold">{latestAttack.attackerName}</span>
-                    <ArrowRight className="w-4 h-4" />
-                    <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
-                    <span className="ml-2">
+                {/* 最新の攻撃結果 */}
+                {latestAttack && (
+                  <div className="flex items-center justify-center gap-2 text-white/60 text-sm border-t border-white/10 pt-3">
+                    <span>{latestAttack.attackerName}</span>
+                    <ArrowRight className="w-3 h-3" />
+                    <span className="font-bold text-pink-400">「{latestAttack.targetChar}」</span>
+                    <span>
                       {(latestAttack.hits?.length ?? 0) > 0
-                        ? `${latestAttack.hits.length}人にヒット！`
-                        : 'ハズレ...'}
+                        ? `${latestAttack.hits.length}人にヒット`
+                        : 'ハズレ'}
                     </span>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </div>
+            )}
+          </div>
 
           {/* デバッグ: パネル状態表示 */}
           {debugMode && (
