@@ -46,6 +46,7 @@ interface MojiHuntRoom {
     currentTopic?: string;
     players: MojiHuntPlayer[] | Record<string, MojiHuntPlayer>;
     currentTurnPlayerId?: string;
+    usedCharacters?: string[] | Record<string, string>;
   };
 }
 
@@ -77,6 +78,7 @@ export interface AdminRoom {
     currentTurnPlayerName?: string;
     eliminatedCount?: number;
     mojiHuntPlayers?: AdminMojiHuntPlayerDetail[];
+    usedCharacters?: string[];
   };
 }
 
@@ -161,6 +163,12 @@ export const useAdminRooms = () => {
           revealedCharacters: Array.isArray(p.revealedCharacters) ? p.revealedCharacters : [],
         }));
 
+        // 使用済み文字
+        const rawUsedChars = r.gameState?.usedCharacters;
+        const usedCharacters: string[] = Array.isArray(rawUsedChars)
+          ? rawUsedChars
+          : rawUsedChars ? Object.values(rawUsedChars) : [];
+
         return {
           gameType: 'moji-hunt' as const,
           code,
@@ -174,6 +182,7 @@ export const useAdminRooms = () => {
             currentTurnPlayerName: currentTurnPlayer?.name,
             eliminatedCount,
             mojiHuntPlayers,
+            usedCharacters,
           },
         };
       });
@@ -210,6 +219,12 @@ export const useAdminRooms = () => {
           revealedCharacters: Array.isArray(p.revealedCharacters) ? p.revealedCharacters : [],
         }));
 
+        // 使用済み文字
+        const rawUsedChars = r.gameState?.usedCharacters;
+        const usedCharacters: string[] = Array.isArray(rawUsedChars)
+          ? rawUsedChars
+          : rawUsedChars ? Object.values(rawUsedChars) : [];
+
         return {
           gameType: 'moji-hunt-dev' as const,
           code,
@@ -223,6 +238,7 @@ export const useAdminRooms = () => {
             currentTurnPlayerName: currentTurnPlayer?.name,
             eliminatedCount,
             mojiHuntPlayers,
+            usedCharacters,
           },
         };
       });

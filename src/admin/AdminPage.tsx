@@ -7,6 +7,20 @@ interface AdminPageProps {
   onBack: () => void;
 }
 
+// ひらがな46文字（濁点・半濁点なし）
+const HIRAGANA_CHARS = [
+  'あ', 'い', 'う', 'え', 'お',
+  'か', 'き', 'く', 'け', 'こ',
+  'さ', 'し', 'す', 'せ', 'そ',
+  'た', 'ち', 'つ', 'て', 'と',
+  'な', 'に', 'ぬ', 'ね', 'の',
+  'は', 'ひ', 'ふ', 'へ', 'ほ',
+  'ま', 'み', 'む', 'め', 'も',
+  'や', 'ゆ', 'よ',
+  'ら', 'り', 'る', 'れ', 'ろ',
+  'わ', 'を', 'ん',
+];
+
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   const now = new Date();
@@ -122,7 +136,7 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
           </div>
         )}
         {(room.gameType === 'moji-hunt' || room.gameType === 'moji-hunt-dev') && (
-          <div className="text-slate-400 text-sm mb-2 space-y-1">
+          <div className="text-slate-400 text-sm mb-2 space-y-2">
             {room.details.currentTopic && (
               <div>お題: <span className="text-white">{room.details.currentTopic}</span></div>
             )}
@@ -131,6 +145,31 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
             )}
             {room.details.eliminatedCount !== undefined && room.details.eliminatedCount > 0 && (
               <div>脱落: <span className="text-red-400">{room.details.eliminatedCount}人</span></div>
+            )}
+            {/* 文字パネル */}
+            {room.phase === 'playing' && room.details.usedCharacters && (
+              <div className="mt-2">
+                <div className="text-xs text-slate-500 mb-1">
+                  使用済み: {room.details.usedCharacters.length}/46
+                </div>
+                <div className="flex flex-wrap gap-0.5">
+                  {HIRAGANA_CHARS.map(char => {
+                    const isUsed = room.details.usedCharacters?.includes(char);
+                    return (
+                      <span
+                        key={char}
+                        className={`w-4 h-4 text-[10px] flex items-center justify-center rounded ${
+                          isUsed
+                            ? 'bg-slate-600 text-slate-400'
+                            : 'bg-slate-700 text-white'
+                        }`}
+                      >
+                        {char}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         )}
