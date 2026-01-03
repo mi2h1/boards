@@ -38,11 +38,11 @@ export const Card = ({
   size = 'md',
   highlighted = false,
 }: CardProps) => {
-  // サイズ設定（カード画像のアスペクト比に合わせて調整）
+  // サイズ設定（正方形 1:1）
   const sizeClasses = {
-    sm: 'w-12 h-[4.5rem]',
-    md: 'w-16 h-24',
-    lg: 'w-20 h-[7.5rem]',
+    sm: 'w-12 h-12',
+    md: 'w-16 h-16',
+    lg: 'w-20 h-20',
   };
 
   const baseClasses = `
