@@ -13,7 +13,7 @@
 - React 19 + TypeScript
 - Vite 7
 - Tailwind CSS v4 (@tailwindcss/vite)
-- Firebase Realtime Database（aoaと共用、無料枠内で運用）
+- Firebase Realtime Database（無料枠内で運用）
 - Lucide React（アイコン）
 
 ## ディレクトリ構造
@@ -22,11 +22,29 @@
 src/
 ├── App.tsx                    # ポータル（名前入力・ゲーム選択）
 ├── games/
-│   └── aoa/                   # アトランティスの深淵
-│       ├── AoaGame.tsx        # ゲームのエントリーポイント
-│       ├── components/        # UI コンポーネント
-│       ├── hooks/             # aoa専用フック
-│       └── lib/               # Firebase連携など
+│   ├── aoa/                   # アトランティスの深淵
+│   │   ├── AoaGame.tsx
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   └── types/
+│   ├── moji-hunt/             # もじはんと（本番）
+│   │   ├── MojiHuntGame.tsx
+│   │   ├── components/
+│   │   │   ├── Lobby.tsx
+│   │   │   ├── WordInputPhase.tsx
+│   │   │   ├── GamePlayPhase.tsx
+│   │   │   ├── ResultScreen.tsx
+│   │   │   ├── HiraganaBoard.tsx
+│   │   │   ├── PlayerWordDisplay.tsx
+│   │   │   └── GameStartTransition.tsx
+│   │   ├── hooks/
+│   │   │   └── useRoom.ts
+│   │   ├── lib/
+│   │   │   └── hiragana.ts
+│   │   └── types/
+│   │       └── game.ts
+│   └── moji-hunt-dev/         # もじはんと（開発版）
+│       └── ...                # 本番と同構造 + デバッグ機能
 └── shared/
     └── hooks/
         └── usePlayer.ts       # プレイヤー名管理（共用）
@@ -37,21 +55,20 @@ src/
 ### アトランティスの深淵 (aoa)
 - パス: `/boards/aoa`
 - 状態: 完成・稼働中
-- 元リポジトリから移植済み
+- 概要: 宝を求めて潜水するチキンレースゲーム
 
-## 未実装ゲーム
-
-### 文字ゲス (moji-guess)
-- パス: `/boards/moji-guess`（予定）
-- 状態: 未着手
-- 概要: 「あいうえバトル」風のひらがな当てゲーム
-- 仕様: GitHubリポジトリ https://github.com/mi2h1/moji-guess のmdファイル参照
+### もじはんと (moji-hunt)
+- パス: `/boards/moji-hunt`（本番）、`/boards/moji-hunt-dev`（開発版）
+- 状態: 完成・稼働中
+- 概要: ひらがな当てバトルゲーム（2〜5人）
+- 仕様: `docs/moji-hunt-spec.md` 参照
 
 ## URL ルーティング
 
 - `/boards/` → ゲーム選択画面
 - `/boards/aoa` → アトランティスの深淵
-- `/boards/moji-guess` → 文字ゲス（予定）
+- `/boards/moji-hunt` → もじはんと（本番）
+- `/boards/moji-hunt-dev` → もじはんと（開発版・デバッグ機能付き）
 
 GitHub Pagesでは404.htmlによるSPAリダイレクトを使用。
 
