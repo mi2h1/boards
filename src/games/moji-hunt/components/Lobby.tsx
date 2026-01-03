@@ -63,15 +63,20 @@ export const Lobby = ({
         <div className="min-h-screen bg-black/20 flex items-center justify-center p-4">
           <div className="bg-slate-800/95 rounded-xl p-6 max-w-2xl w-full">
             {/* タイトル */}
-            <h1 className="text-3xl font-bold text-white text-center mb-4 flex items-center justify-center gap-2">
-              もじはんと
+            <div className="text-center mb-4">
+              <img
+                src="/boards/images/vec_logo_moji-hant.svg"
+                alt="もじはんと"
+                className="h-12 mx-auto"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
               {debugMode && (
-                <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded inline-flex items-center gap-1">
+                <span className="text-xs bg-orange-600 text-white px-2 py-0.5 rounded inline-flex items-center gap-1 mt-2">
                   <FlaskConical className="w-3 h-3" />
                   デバッグモード
                 </span>
               )}
-            </h1>
+            </div>
 
             {/* ルームコード */}
             <div className="bg-slate-700 rounded-lg p-4 mb-6 text-center relative">
@@ -213,7 +218,12 @@ export const Lobby = ({
       <div className="min-h-screen bg-black/20 flex items-center justify-center p-4">
         <div className="bg-slate-800/95 rounded-xl p-6 max-w-md w-full">
           {/* タイトル */}
-          <h1 className="text-4xl font-bold text-white text-center mb-2">もじはんと</h1>
+          <img
+            src="/boards/images/vec_logo_moji-hant.svg"
+            alt="もじはんと"
+            className="h-16 mx-auto mb-2"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
           <div className="text-slate-400 text-center mb-6">
             ようこそ、{playerName}さん
           </div>

@@ -176,7 +176,12 @@ function App() {
           {/* もじはんと */}
           <div className="bg-slate-800/80 rounded-xl overflow-hidden hover:ring-2 hover:ring-pink-500 transition-all">
             <div className="h-40 bg-gradient-to-br from-pink-600 to-orange-500 flex items-center justify-center">
-              <span className="text-4xl font-bold text-white">もじはんと</span>
+              <img
+                src="/boards/images/vec_logo_moji-hant.svg"
+                alt="もじはんと"
+                className="h-12"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </div>
             <div className="p-4">
               <h2 className="text-lg font-bold text-white mb-2">もじはんと</h2>

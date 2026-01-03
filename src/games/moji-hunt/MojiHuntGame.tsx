@@ -174,20 +174,23 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              もじはんと
-              {debugMode && (
-                <span className="bg-orange-600 text-white px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
-                  <FlaskConical className="w-3 h-3" />
-                  DEBUG
-                </span>
-              )}
-            </h1>
+          <div className="flex items-center gap-3">
+            <img
+              src="/boards/images/vec_logo_moji-hant.svg"
+              alt="もじはんと"
+              className="h-8"
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
+            {debugMode && (
+              <span className="bg-orange-600 text-white px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
+                <FlaskConical className="w-3 h-3" />
+                DEBUG
+              </span>
+            )}
             {roomCode && (
-              <p className="text-white/60 text-sm">
+              <span className="text-white/60 text-sm">
                 お題: {TOPIC_LABELS[settings.topic]}
-              </p>
+              </span>
             )}
           </div>
         </header>
