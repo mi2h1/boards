@@ -37,9 +37,10 @@ export const GamePlayPhase = ({
 
   // currentAttackがrevealingに変わったらフリップアニメーション開始
   useEffect(() => {
-    if (currentAttack?.phase === 'revealing' && currentAttack.hits.length > 0) {
+    const hits = currentAttack?.hits ?? [];
+    if (currentAttack?.phase === 'revealing' && hits.length > 0) {
       const revealing: Record<string, { positions: number[]; characters: string[] }> = {};
-      currentAttack.hits.forEach(hit => {
+      hits.forEach(hit => {
         revealing[hit.playerId] = {
           positions: hit.positions,
           characters: hit.characters,
@@ -372,11 +373,11 @@ export const GamePlayPhase = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {currentAttack.hits.length > 0 ? (
+                  {(currentAttack.hits?.length ?? 0) > 0 ? (
                     <>
                       <p className="text-2xl font-bold text-red-400">ヒット！</p>
                       <p className="text-white">
-                        {currentAttack.hits.map(h => h.playerName).join('、')} に当たった！
+                        {currentAttack.hits?.map(h => h.playerName).join('、')} に当たった！
                       </p>
                     </>
                   ) : (
@@ -419,7 +420,7 @@ export const GamePlayPhase = ({
                     <ArrowRight className="w-4 h-4" />
                     <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
                     <span className="ml-2">
-                      {latestAttack.hits.length > 0
+                      {(latestAttack.hits?.length ?? 0) > 0
                         ? `${latestAttack.hits.length}人にヒット！`
                         : 'ハズレ...'}
                     </span>
