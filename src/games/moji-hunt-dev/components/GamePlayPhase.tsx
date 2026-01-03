@@ -206,10 +206,21 @@ export const GamePlayPhase = ({
     // 勝利判定
     const remainingPlayers = updatedPlayers.filter(p => !p.isEliminated);
     if (remainingPlayers.length <= 1) {
+      let finalWinnerId: string | null;
+
+      if (remainingPlayers.length === 1) {
+        // 通常ケース：1人だけ残った
+        finalWinnerId = remainingPlayers[0].id;
+      } else {
+        // 特殊ケース：全員同時脱落（残り2人で未公開1文字が同じ場合など）
+        // 宣言したプレイヤーが勝利
+        finalWinnerId = currentTurnPlayerId;
+      }
+
       updateGameState({
         players: updatedPlayers,
         phase: 'game_end',
-        winnerId: remainingPlayers[0]?.id ?? null,
+        winnerId: finalWinnerId,
         currentAttack: null,
       });
       return;
