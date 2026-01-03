@@ -257,28 +257,40 @@ export const Lobby = ({
               <input
                 ref={roomCodeInputRef}
                 type="text"
-                onInput={(e) => {
-                  const input = e.target as HTMLInputElement;
-                  // 英数字のみ、大文字に変換、4文字まで
-                  const filtered = input.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, '')
-                    .slice(0, 4);
-                  input.value = filtered;
-                  setCanJoin(filtered.length === 4);
+                inputMode="text"
+                enterKeyHint="go"
+                onChange={(e) => {
+                  // 表示用に大文字変換のみ（フィルタリングは送信時）
+                  const raw = e.target.value;
+                  const upper = raw.toUpperCase();
+                  if (raw !== upper) {
+                    e.target.value = upper;
+                  }
+                  // 英数字のみカウントして4文字かチェック
+                  const filtered = upper.replace(/[^A-Z0-9]/g, '');
+                  setCanJoin(filtered.length >= 4);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const raw = roomCodeInputRef.current?.value ?? '';
+                    const code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+                    if (code.length === 4) onJoinRoom(code);
+                  }
                 }}
                 placeholder="ルームコードを入力"
                 className="w-full px-4 py-3 bg-slate-700 text-white text-center text-xl
                   font-mono tracking-widest rounded-lg uppercase
                   focus:outline-none focus:ring-2 focus:ring-pink-500"
-                maxLength={8}
+                maxLength={10}
                 autoComplete="off"
                 autoCorrect="off"
+                autoCapitalize="characters"
                 spellCheck={false}
               />
               <button
                 onClick={() => {
-                  const code = roomCodeInputRef.current?.value ?? '';
+                  const raw = roomCodeInputRef.current?.value ?? '';
+                  const code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
                   if (code.length === 4) onJoinRoom(code);
                 }}
                 disabled={isLoading || !canJoin}
