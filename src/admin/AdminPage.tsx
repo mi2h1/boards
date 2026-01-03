@@ -19,7 +19,7 @@ const HIRAGANA_GRID: (string | null)[] = [
   // え段
   null, 'れ', null, 'め', 'へ', 'ね', 'て', 'せ', 'け', 'え',
   // お段
-  null, 'ろ', 'よ', 'も', 'ほ', 'の', 'と', 'そ', 'こ', 'お',
+  'ー', 'ろ', 'よ', 'も', 'ほ', 'の', 'と', 'そ', 'こ', 'お',
 ];
 
 const formatTime = (timestamp: number) => {
@@ -158,7 +158,7 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
               )}
               {room.phase === 'playing' && room.details.usedCharacters && (
                 <div className="text-xs text-slate-500">
-                  使用済み: {room.details.usedCharacters.length}/46
+                  使用済み: {room.details.usedCharacters.length}/47
                 </div>
               )}
             </div>
