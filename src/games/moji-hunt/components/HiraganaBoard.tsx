@@ -51,7 +51,7 @@ export const HiraganaBoard = ({
                     }
                   `}
                 >
-                  {isUsed ? '×' : char}
+                  {char}
                 </button>
               );
             })}

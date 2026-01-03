@@ -257,8 +257,8 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
               className="h-8"
               style={{ filter: 'brightness(0) invert(1)' }}
             />
-            {gameState?.currentTopic && (
-              <span className="text-white/60 text-sm">
+            {phase === 'playing' && gameState?.currentTopic && (
+              <span className="bg-white/20 text-white/80 px-3 py-1 rounded-full text-sm">
                 お題: {gameState.currentTopic}
               </span>
             )}
@@ -282,6 +282,7 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
             onSubmitWord={handleWordSubmit}
             topicChangeVotes={gameState.topicChangeVotes ?? []}
             onVoteTopicChange={handleVoteTopicChange}
+            turnOrder={gameState.turnOrder}
             debugMode={debugMode}
           />
         )}

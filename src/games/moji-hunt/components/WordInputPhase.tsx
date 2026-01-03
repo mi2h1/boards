@@ -13,6 +13,8 @@ interface WordInputPhaseProps {
   // お題チェンジ投票
   topicChangeVotes: string[];
   onVoteTopicChange: () => void;
+  // ターン順
+  turnOrder: string[];
   // デバッグ用
   debugMode?: boolean;
   debugLocalStates?: Record<string, LocalPlayerState>;
@@ -29,6 +31,7 @@ export const WordInputPhase = ({
   onSubmitWord,
   topicChangeVotes,
   onVoteTopicChange,
+  turnOrder,
   debugMode = false,
   debugLocalStates = {},
   onDebugWordSubmit,
@@ -39,6 +42,13 @@ export const WordInputPhase = ({
 
   const validation = validateWord(word, settings.minWordLength, settings.maxWordLength);
   const normalizedPreview = word ? normalizeWord(word) : '';
+
+  // プレイヤーをターン順にソート
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aIndex = turnOrder.indexOf(a.id);
+    const bIndex = turnOrder.indexOf(b.id);
+    return aIndex - bIndex;
+  });
 
   const handleSubmit = () => {
     if (!validation.isValid) {
@@ -93,7 +103,7 @@ export const WordInputPhase = ({
             入力状況 ({readyPlayers.length}/{players.length})
           </h3>
           <div className="space-y-2">
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <div
                 key={player.id}
                 className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg"
@@ -123,13 +133,10 @@ export const WordInputPhase = ({
       <div className="bg-white/10 rounded-xl p-6 text-center">
         <p className="text-white/60 mb-2">お題</p>
         <h2 className="text-3xl font-bold text-white">
-          「{currentTopic}」
+          {currentTopic}
         </h2>
         <p className="text-white/40 text-sm mt-2">
           自由にお題を考えてもOK!
-        </p>
-        <p className="text-white/60 mt-4">
-          {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください
         </p>
         {/* お題チェンジ投票 */}
         <div className="mt-4 pt-4 border-t border-white/10">
@@ -155,6 +162,9 @@ export const WordInputPhase = ({
 
       {/* 入力フォーム */}
       <div className="bg-white/10 rounded-xl p-6">
+        <p className="text-white/60 text-center mb-4">
+          {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください
+        </p>
         <div className="mb-4">
           <input
             type="text"

@@ -133,7 +133,7 @@ export const WordInputPhase = ({
       <div className="bg-white/10 rounded-xl p-6 text-center">
         <p className="text-white/60 mb-2">お題</p>
         <h2 className="text-3xl font-bold text-white">
-          「{currentTopic}」
+          {currentTopic}
         </h2>
         <p className="text-white/40 text-sm mt-2">
           自由にお題を考えてもOK!

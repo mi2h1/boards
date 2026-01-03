@@ -32,6 +32,13 @@ export const GamePlayPhase = ({
     currentAttack,
   } = gameState;
 
+  // プレイヤーをターン順にソート
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aIndex = turnOrder.indexOf(a.id);
+    const bIndex = turnOrder.indexOf(b.id);
+    return aIndex - bIndex;
+  });
+
   // フリップアニメーション中のプレイヤーと位置・文字（revealing時に設定）
   const [revealingPlayers, setRevealingPlayers] = useState<Record<string, { positions: number[]; characters: string[] }>>({});
 
@@ -269,7 +276,7 @@ export const GamePlayPhase = ({
             デバッグ: プレイヤー操作
           </h3>
           <div className="flex flex-wrap gap-2">
-            {players.map((player) => {
+            {sortedPlayers.map((player) => {
               const isControlled = debugControlledPlayerId
                 ? player.id === debugControlledPlayerId
                 : player.id === playerId;
@@ -311,7 +318,7 @@ export const GamePlayPhase = ({
             デバッグ: 全プレイヤーの言葉
           </h3>
           <div className="space-y-2">
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <div key={player.id} className="flex items-center gap-3">
                 <span className={`w-24 font-bold truncate ${player.isEliminated ? 'text-red-400 line-through' : 'text-white'}`}>
                   {player.name}
@@ -348,7 +355,7 @@ export const GamePlayPhase = ({
         <div className="space-y-3 order-2 lg:order-1 lg:w-72 lg:shrink-0">
           <h3 className="text-white/80 font-bold">プレイヤー状況</h3>
           <div className="grid gap-3">
-            {players.map((player) => {
+            {sortedPlayers.map((player) => {
               // デバッグモードでは操作中のプレイヤー視点で表示
               const viewAsMe = player.id === controlledPlayerId;
               const revealingData = revealingPlayers[player.id];
