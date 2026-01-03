@@ -19,7 +19,8 @@ export const JudgmentPhase = ({
   onNextRound,
   onLeaveRoom,
 }: JudgmentPhaseProps) => {
-  const { judgmentResult, round, players, turnOrder } = gameState;
+  const { judgmentResult, round, players, turnOrder, settings } = gameState;
+  const initialLife = settings.initialLife;
   const [stage, setStage] = useState<AnimationStage>('jackal');
 
   // アニメーションのタイミング制御
@@ -187,8 +188,13 @@ export const JudgmentPhase = ({
                 const player = players.find(p => p.id === detail.playerId);
                 // 敗者のライフは既に減算されているので、表示用に調整
                 const currentLife = player?.life ?? 0;
-                // 敗者は現在のライフ + 1（ダメージ前）を表示して、1つをダメージ表示
-                const displayLife = isLoserPlayer ? currentLife + 1 : currentLife;
+                // 敗者: ダメージ前のライフ = currentLife + 1
+                // 非敗者: そのまま
+                const filledHearts = isLoserPlayer ? currentLife : currentLife;
+                // 敗者: 今回失うハート1つ（アニメーション付き）
+                const damagingHeart = isLoserPlayer ? 1 : 0;
+                // 既に失ったハート（中抜き・半透明）
+                const lostHearts = initialLife - currentLife - damagingHeart;
 
                 return (
                   <div
@@ -209,24 +215,31 @@ export const JudgmentPhase = ({
                       </div>
                       {/* HP表示 */}
                       <div className="flex items-center justify-center gap-0.5 mt-1">
-                        {Array.from({ length: displayLife }).map((_, i) => {
-                          // 敗者の最後のハートはダメージ表示（中抜き）
-                          const isDamagedHeart = isLoserPlayer && i === displayLife - 1;
-                          return isDamagedHeart ? (
-                            <Heart
-                              key={i}
-                              className={`w-4 h-4 text-red-400 ${stage === 'cards' ? 'heart-break' : ''}`}
-                              strokeWidth={2}
-                            />
-                          ) : (
-                            <Heart
-                              key={i}
-                              className="w-4 h-4 text-red-400 fill-red-400"
-                            />
-                          );
-                        })}
-                        {displayLife === 0 && (
-                          <span className="text-red-400 text-xs font-bold">脱落</span>
+                        {/* 現在のライフ（塗りつぶし） */}
+                        {Array.from({ length: filledHearts }).map((_, i) => (
+                          <Heart
+                            key={`filled-${i}`}
+                            className="w-4 h-4 text-red-400 fill-red-400"
+                          />
+                        ))}
+                        {/* 今回失うハート（敗者のみ、アニメーション付き中抜き） */}
+                        {damagingHeart > 0 && (
+                          <Heart
+                            key="damaging"
+                            className={`w-4 h-4 text-red-400 ${stage === 'cards' ? 'heart-break' : ''}`}
+                            strokeWidth={2}
+                          />
+                        )}
+                        {/* 既に失ったハート（中抜き・半透明） */}
+                        {Array.from({ length: lostHearts }).map((_, i) => (
+                          <Heart
+                            key={`lost-${i}`}
+                            className="w-4 h-4 text-red-400/50"
+                            strokeWidth={2}
+                          />
+                        ))}
+                        {initialLife === lostHearts + damagingHeart && (
+                          <span className="text-red-400 text-xs font-bold ml-1">脱落</span>
                         )}
                       </div>
                     </div>
