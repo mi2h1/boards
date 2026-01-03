@@ -159,7 +159,7 @@ export const MojiGuessGame = ({ onBack }: MojiGuessGameProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 to-orange-900 p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
         <header className="flex items-center gap-4 mb-6">
           <button

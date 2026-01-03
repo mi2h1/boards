@@ -181,7 +181,7 @@ export const GamePlayPhase = ({
   const latestAttack = attackHistory[attackHistory.length - 1];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* デバッグ用: プレイヤー切り替え */}
       {debugMode && (
         <div className="bg-orange-900/30 border border-orange-600/50 rounded-xl p-4">
@@ -263,69 +263,74 @@ export const GamePlayPhase = ({
         </div>
       )}
 
-      {/* ターン表示 */}
-      <div className="bg-white/10 rounded-xl p-4 text-center">
-        {isMyTurn ? (
-          <div className="flex items-center justify-center gap-2 text-pink-300">
-            <Zap className="w-5 h-5" />
-            <span className="text-lg font-bold">
-              {debugMode && debugControlledPlayerId
-                ? `${myPlayer?.name}の番です！文字を選んで攻撃`
-                : 'あなたの番です！文字を選んで攻撃'
-              }
-            </span>
-          </div>
-        ) : (
-          <div className="text-white/80">
-            <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
-          </div>
-        )}
-        {lastAttackHadHit && !isMyTurn && currentPlayer && (
-          <p className="text-yellow-300 text-sm mt-1">
-            ヒット！ {currentPlayer.name} は続けて攻撃できます
-          </p>
-        )}
-      </div>
-
-      {/* 最新の攻撃結果 */}
-      {latestAttack && (
-        <div className="bg-white/5 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            <span className="font-bold">{latestAttack.attackerName}</span>
-            <ArrowRight className="w-4 h-4" />
-            <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
-            <span className="ml-2">
-              {latestAttack.hits.length > 0
-                ? `${latestAttack.hits.length}人にヒット！`
-                : 'ハズレ...'}
-            </span>
+      {/* 2カラムレイアウト */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
+        {/* 左カラム: プレイヤー状況 */}
+        <div className="space-y-3 order-2 lg:order-1">
+          <h3 className="text-white/80 font-bold">プレイヤー状況</h3>
+          <div className="grid gap-3">
+            {players.map((player) => (
+              <PlayerWordDisplay
+                key={player.id}
+                player={player}
+                localState={player.id === playerId ? localState ?? undefined : undefined}
+                isCurrentTurn={player.id === currentTurnPlayerId}
+                isMe={player.id === playerId}
+              />
+            ))}
           </div>
         </div>
-      )}
 
-      {/* 50音ボード */}
-      <HiraganaBoard
-        usedCharacters={usedCharacters}
-        disabled={!isMyTurn || pendingAttack !== null}
-        onSelectCharacter={handleAttack}
-      />
+        {/* 右カラム: アナウンス + 50音ボード */}
+        <div className="space-y-4 order-1 lg:order-2">
+          {/* ターン表示 */}
+          <div className="bg-white/10 rounded-xl p-4 text-center">
+            {isMyTurn ? (
+              <div className="flex items-center justify-center gap-2 text-pink-300">
+                <Zap className="w-5 h-5" />
+                <span className="text-lg font-bold">
+                  {debugMode && debugControlledPlayerId
+                    ? `${myPlayer?.name}の番です！文字を選んで攻撃`
+                    : 'あなたの番です！文字を選んで攻撃'
+                  }
+                </span>
+              </div>
+            ) : (
+              <div className="text-white/80">
+                <span className="font-bold text-white">{currentPlayer?.name}</span> の番です
+              </div>
+            )}
+            {lastAttackHadHit && !isMyTurn && currentPlayer && (
+              <p className="text-yellow-300 text-sm mt-1">
+                ヒット！ {currentPlayer.name} は続けて攻撃できます
+              </p>
+            )}
+          </div>
 
-      {/* プレイヤー状況 */}
-      <div className="space-y-3">
-        <h3 className="text-white/80 font-bold">プレイヤー状況</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {players.map((player) => (
-            <PlayerWordDisplay
-              key={player.id}
-              player={player}
-              localState={player.id === playerId ? localState ?? undefined : undefined}
-              isCurrentTurn={player.id === currentTurnPlayerId}
-              isMe={player.id === playerId}
-            />
-          ))}
+          {/* 最新の攻撃結果 */}
+          {latestAttack && (
+            <div className="bg-white/5 rounded-xl p-4">
+              <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
+                <span className="font-bold">{latestAttack.attackerName}</span>
+                <ArrowRight className="w-4 h-4" />
+                <span className="text-xl font-bold text-pink-400">「{latestAttack.targetChar}」</span>
+                <span className="ml-2">
+                  {latestAttack.hits.length > 0
+                    ? `${latestAttack.hits.length}人にヒット！`
+                    : 'ハズレ...'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 50音ボード */}
+          <HiraganaBoard
+            usedCharacters={usedCharacters}
+            disabled={!isMyTurn || pendingAttack !== null}
+            onSelectCharacter={handleAttack}
+          />
         </div>
       </div>
-
     </div>
   );
 };
