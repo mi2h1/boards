@@ -125,6 +125,9 @@ export const WordInputPhase = ({
         <h2 className="text-3xl font-bold text-white">
           「{currentTopic}」
         </h2>
+        <p className="text-white/40 text-sm mt-2">
+          自由にお題を考えてもOK!
+        </p>
         <p className="text-white/60 mt-4">
           {settings.minWordLength}〜{settings.maxWordLength}文字のひらがなで言葉を入力してください
         </p>
