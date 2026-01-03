@@ -5,7 +5,7 @@ import { Lobby } from './components/Lobby';
 import { GamePlayPhase } from './components/GamePlayPhase';
 import { JudgmentPhase } from './components/JudgmentPhase';
 import { GameEndPhase } from './components/GameEndPhase';
-import { createGameDeck, calculateTotal } from './lib/cards';
+import { createGameDeck, calculateTotal, shuffleDeck } from './lib/cards';
 import { DEFAULT_SETTINGS } from './types/game';
 import type { JudgmentResult, Card } from './types/game';
 
@@ -67,6 +67,7 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     updateGameState({
       phase: 'declaring',
       deck: remainingDeck,
+      discardPile: [],
       dealtCards,
       turnOrder: shuffledOrder,
       currentTurnPlayerId: shuffledOrder[0],
@@ -155,6 +156,7 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
       mysteryCard: result.mysteryResolvedCard ?? undefined,
       hasDouble: result.hasDouble,
       hasMaxZero: result.hasMaxZero,
+      hasShuffleZero: result.hasShuffleZero,
       maxValue: result.maxValue,
     };
 
@@ -201,12 +203,31 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
       return;
     }
 
-    // 新しいラウンドを開始
-    const deck = createGameDeck();
-    const dealtCards: Record<string, Card> = {};
-    const remainingDeck = [...deck];
+    // 今ラウンドで使ったカードを捨て札に追加
+    const usedCards = Object.values(gameState.dealtCards);
+    let newDiscardPile = [...(gameState.discardPile || []), ...usedCards];
 
-    // アクティブプレイヤーにのみカードを配る
+    // 現在の山札
+    let currentDeck = [...gameState.deck];
+
+    // 特殊0（シャッフル）があった場合、捨て札を山札に混ぜてシャッフル
+    const hasShuffleZero = gameState.judgmentResult?.hasShuffleZero ?? false;
+    if (hasShuffleZero && newDiscardPile.length > 0) {
+      // 捨て札を山札に追加してシャッフル
+      currentDeck = shuffleDeck([...currentDeck, ...newDiscardPile]);
+      newDiscardPile = [];
+    }
+
+    // 山札が足りない場合は捨て札をシャッフルして補充
+    if (currentDeck.length < activePlayers.length && newDiscardPile.length > 0) {
+      currentDeck = shuffleDeck([...currentDeck, ...newDiscardPile]);
+      newDiscardPile = [];
+    }
+
+    // アクティブプレイヤーにカードを配る
+    const dealtCards: Record<string, Card> = {};
+    const remainingDeck = [...currentDeck];
+
     for (const player of activePlayers) {
       const card = remainingDeck.pop();
       if (card) {
@@ -230,6 +251,7 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
     updateGameState({
       phase: 'declaring',
       deck: remainingDeck,
+      discardPile: newDiscardPile,
       dealtCards,
       turnOrder: newTurnOrder,
       currentTurnPlayerId: startPlayerId,
@@ -257,6 +279,7 @@ export const JackalDevGame = ({ onBack }: JackalDevGameProps) => {
       phase: 'waiting',
       players: resetPlayers,
       deck: [],
+      discardPile: [],
       dealtCards: {},
       round: 1,
       currentTurnPlayerId: null,

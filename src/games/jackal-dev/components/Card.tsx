@@ -84,6 +84,13 @@ export const Card = ({
           border: 'border-violet-300',
           text: 'text-white',
         };
+      case 'shuffle_zero':
+        // 特殊0（シャッフル）- 黄色系で目立たせる
+        return {
+          bg: 'bg-gradient-to-br from-yellow-500 to-amber-600',
+          border: 'border-yellow-300',
+          text: 'text-yellow-900',
+        };
       default:
         return {
           bg: 'bg-gradient-to-br from-gray-500 to-gray-700',
