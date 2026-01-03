@@ -422,6 +422,18 @@ export const GamePlayPhase = ({
             </>
           )}
 
+          {/* デバッグ: パネル状態表示 */}
+          {debugMode && (
+            <div className="bg-red-900/50 text-white text-xs p-2 rounded mb-2 font-mono">
+              <div>isMyTurn: {String(isMyTurn)}</div>
+              <div>currentTurnPlayerId: {currentTurnPlayerId ?? 'null'}</div>
+              <div>controlledPlayerId: {controlledPlayerId}</div>
+              <div>playerId: {playerId}</div>
+              <div>currentAttack: {currentAttack ? JSON.stringify(currentAttack) : 'null'}</div>
+              <div>disabled: {String(!isMyTurn || currentAttack !== null)}</div>
+            </div>
+          )}
+
           {/* 50音ボード */}
           <HiraganaBoard
             usedCharacters={usedCharacters}
