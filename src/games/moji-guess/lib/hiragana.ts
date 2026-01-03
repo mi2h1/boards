@@ -10,7 +10,7 @@ export const HIRAGANA_ROWS: (string | null)[][] = [
   ['や', null, 'ゆ', null, 'よ'],
   ['ら', 'り', 'る', 'れ', 'ろ'],
   ['わ', null, null, null, 'を'],
-  ['ん', null, null, null, null],
+  ['ん', null, null, null, 'ー'],
 ];
 
 // 有効なひらがな文字リスト
@@ -47,10 +47,10 @@ export const normalizeWord = (word: string): string => {
   return Array.from(word).map(normalizeChar).join('');
 };
 
-// 入力がひらがなのみかチェック（濁点・半濁点・小文字も許可）
+// 入力がひらがなのみかチェック（濁点・半濁点・小文字・長音も許可）
 export const isValidHiraganaInput = (word: string): boolean => {
-  // ひらがな範囲: U+3040-U+309F
-  const hiraganaRegex = /^[\u3040-\u309F]+$/;
+  // ひらがな範囲: U+3040-U+309F + 長音記号 U+30FC
+  const hiraganaRegex = /^[\u3040-\u309F\u30FC]+$/;
   return hiraganaRegex.test(word);
 };
 
