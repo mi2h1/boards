@@ -1,3 +1,62 @@
+# Game Board
+
+オンラインボードゲームポータル。複数のゲームを一つのサイトで提供する。
+
+## プロジェクト概要
+
+- **リポジトリ**: https://github.com/mi2h1/boards
+- **公開URL**: https://mi2h1.github.io/boards/
+- **デプロイ**: GitHub Actions → GitHub Pages
+
+## 技術スタック
+
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS v4 (@tailwindcss/vite)
+- Firebase Realtime Database（aoaと共用、無料枠内で運用）
+- Lucide React（アイコン）
+
+## ディレクトリ構造
+
+```
+src/
+├── App.tsx                    # ポータル（名前入力・ゲーム選択）
+├── games/
+│   └── aoa/                   # アトランティスの深淵
+│       ├── AoaGame.tsx        # ゲームのエントリーポイント
+│       ├── components/        # UI コンポーネント
+│       ├── hooks/             # aoa専用フック
+│       └── lib/               # Firebase連携など
+└── shared/
+    └── hooks/
+        └── usePlayer.ts       # プレイヤー名管理（共用）
+```
+
+## 実装済みゲーム
+
+### アトランティスの深淵 (aoa)
+- パス: `/boards/aoa`
+- 状態: 完成・稼働中
+- 元リポジトリから移植済み
+
+## 未実装ゲーム
+
+### 文字ゲス (moji-guess)
+- パス: `/boards/moji-guess`（予定）
+- 状態: 未着手
+- 概要: 「あいうえバトル」風のひらがな当てゲーム
+- 仕様: GitHubリポジトリ https://github.com/mi2h1/moji-guess のmdファイル参照
+
+## URL ルーティング
+
+- `/boards/` → ゲーム選択画面
+- `/boards/aoa` → アトランティスの深淵
+- `/boards/moji-guess` → 文字ゲス（予定）
+
+GitHub Pagesでは404.htmlによるSPAリダイレクトを使用。
+
+---
+
 # 開発ポリシー
 
 ## セッション開始時の自動確認
