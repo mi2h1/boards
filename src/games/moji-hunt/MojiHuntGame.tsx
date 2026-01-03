@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { usePlayer } from '../../shared/hooks/usePlayer';
 import { useRoom } from './hooks/useRoom';
 import { Lobby } from './components/Lobby';
@@ -7,6 +7,7 @@ import { WordInputPhase } from './components/WordInputPhase';
 import { GamePlayPhase } from './components/GamePlayPhase';
 import { ResultScreen } from './components/ResultScreen';
 import { GameStartTransition } from './components/GameStartTransition';
+import { RulesModal } from './components/RulesModal';
 import type { LocalPlayerState } from './types/game';
 import { DEFAULT_SETTINGS, getRandomTopic } from './types/game';
 
@@ -45,6 +46,9 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
   const [isStartingGame, setIsStartingGame] = useState(false);
   const [transitionTopic, setTransitionTopic] = useState<string | null>(null);
   const prevPhaseRef = useRef<string | null>(null);
+
+  // ルールモーダル表示
+  const [showRules, setShowRules] = useState(false);
 
   const gameState = roomData?.gameState;
   const players = gameState?.players ?? [];
@@ -223,6 +227,9 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 to-orange-900 p-4">
+      {/* ルールモーダル */}
+      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+
       {/* ゲーム開始トランジション */}
       {showTransition && transitionTopic && (
         <GameStartTransition
@@ -243,7 +250,7 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <img
               src="/boards/images/vec_logo_moji-hant.svg"
               alt="もじはんと"
@@ -256,6 +263,13 @@ export const MojiHuntGame = ({ onBack }: MojiHuntGameProps) => {
               </span>
             )}
           </div>
+          <button
+            onClick={() => setShowRules(true)}
+            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title="遊び方"
+          >
+            <HelpCircle className="w-6 h-6" />
+          </button>
         </header>
 
         {phase === 'word_input' && gameState && (
