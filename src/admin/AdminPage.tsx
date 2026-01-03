@@ -142,7 +142,14 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
               <div>お題: <span className="text-white">{room.details.currentTopic}</span></div>
             )}
             {room.details.currentTurnPlayerName && room.phase === 'playing' && (
-              <div>ターン: <span className="text-yellow-400">{room.details.currentTurnPlayerName}</span></div>
+              <div className="flex items-center gap-2">
+                <span>ターン: <span className="text-yellow-400">{room.details.currentTurnPlayerName}</span></span>
+                {room.details.usedCharacters && room.details.usedCharacters.length > 0 && (
+                  <span className="px-2 py-0.5 bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-300 font-bold">
+                    {room.details.usedCharacters[room.details.usedCharacters.length - 1]}
+                  </span>
+                )}
+              </div>
             )}
             {room.details.eliminatedCount !== undefined && room.details.eliminatedCount > 0 && (
               <div>脱落: <span className="text-red-400">{room.details.eliminatedCount}人</span></div>
@@ -168,14 +175,14 @@ const RoomCard = ({ room, onDelete }: { room: AdminRoom; onDelete: () => void })
                           key={i}
                           className={`w-3 h-3 text-[8px] flex items-center justify-center ${
                             isLast
-                              ? 'text-yellow-400 font-bold'
+                              ? 'text-yellow-400'
                               : isUsed
                                 ? 'text-slate-600'
-                                : 'text-pink-400'
+                                : 'text-white'
                           }`}
                           title={char}
                         >
-                          {isLast ? char : '■'}
+                          ■
                         </span>
                       );
                     })}
