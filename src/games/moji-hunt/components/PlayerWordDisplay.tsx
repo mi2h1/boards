@@ -38,19 +38,24 @@ export const PlayerWordDisplay = ({
       }
     }
   } else {
-    // 他プレイヤーの場合は常に7文字表示
-    // 脱落するまではすべて「?」、脱落したら実際の文字を表示
+    // 他プレイヤーの場合は常に7文字表示（文字数を隠すため）
     for (let i = 0; i < DISPLAY_LENGTH; i++) {
-      if (isEliminated) {
-        // 脱落後：実際の文字を表示
-        if (i < wordLength && revealedCharacters[i]) {
+      if (i < wordLength) {
+        // 実際の言葉の範囲内
+        if (revealedPositions[i] && revealedCharacters[i]) {
+          // 当てられた文字は公開
           displayChars.push({ char: revealedCharacters[i], type: 'revealed' });
         } else {
-          displayChars.push({ char: '-', type: 'dummy' });
+          // 未公開は「?」
+          displayChars.push({ char: '?', type: 'hidden' });
         }
       } else {
-        // 脱落前：すべて「?」
-        displayChars.push({ char: '?', type: 'hidden' });
+        // ダミー部分も「?」で文字数を隠す（脱落後は「-」）
+        if (isEliminated) {
+          displayChars.push({ char: '-', type: 'dummy' });
+        } else {
+          displayChars.push({ char: '?', type: 'hidden' });
+        }
       }
     }
   }
