@@ -375,8 +375,8 @@ export const GamePlayPhase = ({
         {/* 下部エリア */}
         <div className="flex flex-col lg:flex-row gap-4">
 
-          {/* 所持パズル（4枚並ぶ幅を確保） */}
-          <div className="bg-slate-800/50 rounded-lg p-4 flex-shrink-0">
+          {/* 所持パズル（4枚並ぶ幅で固定） */}
+          <div className="bg-slate-800/50 rounded-lg p-4 flex-shrink-0 w-[616px]">
             <h2 className="text-white font-bold mb-3">所持パズル（{workingPuzzles.length}/4）</h2>
             <div className="flex gap-2">
               {workingPuzzles.map((wp) => (
