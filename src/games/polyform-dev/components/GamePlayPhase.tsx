@@ -1,0 +1,235 @@
+import { useState } from 'react';
+import { RotateCw, FlipHorizontal } from 'lucide-react';
+import { PieceDisplay } from './PieceDisplay';
+import { PuzzleCardDisplay } from './PuzzleCardDisplay';
+import { ALL_PUZZLES } from '../data/puzzles';
+import type { GameState, WorkingPuzzle, PlacedPiece, PuzzleCard } from '../types/game';
+
+interface GamePlayPhaseProps {
+  gameState: GameState;
+  currentPlayerId: string;
+  onLeaveRoom: () => void;
+  // 将来のアクション用
+  onPlacePiece?: (puzzleId: string, piece: PlacedPiece) => void;
+  onRemovePiece?: (puzzleId: string, pieceId: string) => void;
+}
+
+export const GamePlayPhase = ({
+  gameState,
+  currentPlayerId,
+  onLeaveRoom,
+}: GamePlayPhaseProps) => {
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
+  const [selectedPuzzleId, setSelectedPuzzleId] = useState<string | null>(null);
+  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
+  const [flipped, setFlipped] = useState(false);
+
+  // 現在のプレイヤーを取得
+  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
+  if (!currentPlayer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900 flex items-center justify-center">
+        <div className="text-white">プレイヤーが見つかりません</div>
+      </div>
+    );
+  }
+
+  // 場のパズルカードを取得
+  const whitePuzzles = gameState.whitePuzzleMarket
+    .map((id) => ALL_PUZZLES.find((p) => p.id === id))
+    .filter((p): p is PuzzleCard => p !== undefined);
+
+  const blackPuzzles = gameState.blackPuzzleMarket
+    .map((id) => ALL_PUZZLES.find((p) => p.id === id))
+    .filter((p): p is PuzzleCard => p !== undefined);
+
+  // 作業中パズルを取得
+  const workingPuzzles = currentPlayer.workingPuzzles
+    .map((wp) => {
+      const card = ALL_PUZZLES.find((p) => p.id === wp.cardId);
+      return card ? { ...wp, card } : null;
+    })
+    .filter((wp): wp is WorkingPuzzle & { card: PuzzleCard } => wp !== null);
+
+  // 選択中のピース
+  const selectedPiece = currentPlayer.pieces.find((p) => p.id === selectedPieceId);
+
+  // 回転
+  const handleRotate = () => {
+    setRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270);
+  };
+
+  // 反転
+  const handleFlip = () => {
+    setFlipped((prev) => !prev);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
+      <div className="min-h-screen bg-black/20 p-4">
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-white">
+            <span className="font-bold">{currentPlayer.name}</span>
+            <span className="text-white/60 ml-2">スコア: {currentPlayer.score}pt</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white/60 text-sm">
+              アクション残り: {currentPlayer.remainingActions}
+            </span>
+            <button
+              onClick={onLeaveRoom}
+              className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white text-sm"
+            >
+              退出
+            </button>
+          </div>
+        </div>
+
+        {/* メインエリア */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* 左: 場のパズル */}
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <h2 className="text-white font-bold mb-3">場のパズル</h2>
+
+            {/* 白パズル */}
+            <div className="mb-4">
+              <h3 className="text-slate-400 text-sm mb-2">白パズル（{gameState.whitePuzzleDeck.length}枚）</h3>
+              <div className="flex flex-wrap gap-2">
+                {whitePuzzles.map((card) => (
+                  <PuzzleCardDisplay
+                    key={card.id}
+                    card={card}
+                    size="sm"
+                    onClick={() => setSelectedPuzzleId(card.id)}
+                    selected={selectedPuzzleId === card.id}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 黒パズル */}
+            <div>
+              <h3 className="text-slate-400 text-sm mb-2">黒パズル（{gameState.blackPuzzleDeck.length}枚）</h3>
+              <div className="flex flex-wrap gap-2">
+                {blackPuzzles.map((card) => (
+                  <PuzzleCardDisplay
+                    key={card.id}
+                    card={card}
+                    size="sm"
+                    onClick={() => setSelectedPuzzleId(card.id)}
+                    selected={selectedPuzzleId === card.id}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 中央: 作業中パズル */}
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <h2 className="text-white font-bold mb-3">作業中パズル（{workingPuzzles.length}/4）</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {workingPuzzles.map((wp) => (
+                <PuzzleCardDisplay
+                  key={wp.cardId}
+                  card={wp.card}
+                  placedPieces={wp.placedPieces}
+                  size="md"
+                  onClick={() => setSelectedPuzzleId(wp.cardId)}
+                  selected={selectedPuzzleId === wp.cardId}
+                />
+              ))}
+              {/* 空きスロット */}
+              {Array(4 - workingPuzzles.length)
+                .fill(null)
+                .map((_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="border-2 border-dashed border-slate-600 rounded-lg aspect-square flex items-center justify-center text-slate-500"
+                  >
+                    空き
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* 右: 手持ちピース */}
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <h2 className="text-white font-bold mb-3">手持ちピース（{currentPlayer.pieces.length}）</h2>
+
+            {/* 選択中のピースのコントロール */}
+            {selectedPiece && (
+              <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <PieceDisplay
+                      type={selectedPiece.type}
+                      rotation={rotation}
+                      flipped={flipped}
+                      size="md"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRotate}
+                      className="p-2 bg-slate-600 hover:bg-slate-500 rounded text-white"
+                      title="回転"
+                    >
+                      <RotateCw className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={handleFlip}
+                      className={`p-2 rounded text-white ${
+                        flipped ? 'bg-teal-600' : 'bg-slate-600 hover:bg-slate-500'
+                      }`}
+                      title="反転"
+                    >
+                      <FlipHorizontal className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ピース一覧 */}
+            <div className="flex flex-wrap gap-2">
+              {currentPlayer.pieces.map((piece) => (
+                <PieceDisplay
+                  key={piece.id}
+                  type={piece.type}
+                  size="md"
+                  onClick={() => {
+                    if (selectedPieceId === piece.id) {
+                      setSelectedPieceId(null);
+                      setRotation(0);
+                      setFlipped(false);
+                    } else {
+                      setSelectedPieceId(piece.id);
+                      setRotation(0);
+                      setFlipped(false);
+                    }
+                  }}
+                  selected={selectedPieceId === piece.id}
+                />
+              ))}
+              {currentPlayer.pieces.length === 0 && (
+                <div className="text-slate-500">ピースがありません</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* デバッグ情報 */}
+        <div className="mt-4 bg-slate-800/50 rounded-lg p-4">
+          <h2 className="text-white font-bold mb-2">ゲーム情報</h2>
+          <div className="text-slate-400 text-sm grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div>フェーズ: {gameState.phase}</div>
+            <div>プレイヤー数: {gameState.players.length}</div>
+            <div>現在のターン: {gameState.players[gameState.currentPlayerIndex]?.name}</div>
+            <div>最終ラウンド: {gameState.finalRound ? 'はい' : 'いいえ'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
