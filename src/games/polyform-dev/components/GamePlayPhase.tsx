@@ -101,6 +101,10 @@ export const GamePlayPhase = ({
   // レスポンシブカードサイズ（7段階）
   const [cardSize, setCardSize] = useState<CardSizeType>('md');
 
+  // ゲーム開始時アニメーション
+  const [gameStarted, setGameStarted] = useState(false);
+  const [dealtCardCount, setDealtCardCount] = useState(0);
+
   // デバッグ用：操作対象プレイヤー（他プレイヤーの操作を可能にする）
   const [debugControlPlayerId, setDebugControlPlayerId] = useState<string>(currentPlayerId);
 
@@ -128,6 +132,29 @@ export const GamePlayPhase = ({
     updateCardSize();
     window.addEventListener('resize', updateCardSize);
     return () => window.removeEventListener('resize', updateCardSize);
+  }, []);
+
+  // ゲーム開始時のカード配布アニメーション
+  useEffect(() => {
+    // フェードイン開始
+    const fadeTimer = setTimeout(() => {
+      setGameStarted(true);
+    }, 100);
+
+    // カード配布（1秒後から開始、0.3秒間隔で1枚ずつ）
+    const dealTimers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < 4; i++) {
+      dealTimers.push(
+        setTimeout(() => {
+          setDealtCardCount(i + 1);
+        }, 1000 + i * 300)
+      );
+    }
+
+    return () => {
+      clearTimeout(fadeTimer);
+      dealTimers.forEach(clearTimeout);
+    };
   }, []);
 
   // アニメーション用のRef
@@ -986,7 +1013,12 @@ export const GamePlayPhase = ({
   const otherPlayers = gameState.players.filter((p) => p.id !== debugControlPlayerId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
+    <motion.div
+      className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: gameStarted ? 1 : 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="min-h-screen bg-black/20 p-4">
         {/* ヘッダー（全幅） */}
         <div className="flex items-center justify-between mb-4">
@@ -1401,19 +1433,22 @@ export const GamePlayPhase = ({
                 const isNewCard = newCardId === card.id;
                 const isRecyclingExit = recyclingMarket === 'white' && recyclePhase === 'exit';
                 const isRecyclingEnter = recyclingMarket === 'white' && recyclePhase === 'enter';
+                const isDealt = index < dealtCardCount;
 
                 return (
                   <motion.div
                     key={card.id}
-                    initial={isNewCard || isRecyclingEnter ? { rotateY: 90, opacity: 0 } : false}
+                    initial={{ rotateY: 90, opacity: 0, scale: 0.8 }}
                     animate={{
-                      rotateY: 0,
-                      opacity: isAnimating || isRecyclingExit ? 0 : 1,
+                      rotateY: isDealt || isNewCard || isRecyclingEnter ? 0 : 90,
+                      opacity: !isDealt ? 0 : isAnimating || isRecyclingExit ? 0 : 1,
+                      scale: isDealt ? 1 : 0.8,
                       y: isRecyclingExit ? 100 : 0,
                     }}
                     transition={{
                       rotateY: { duration: 0.4, ease: 'easeOut' },
                       opacity: { duration: 0.25, delay: isRecyclingExit ? index * 0.05 : 0 },
+                      scale: { duration: 0.3 },
                       y: { duration: 0.3, delay: index * 0.05, ease: 'easeIn' },
                     }}
                     style={{ perspective: 1000 }}
@@ -1467,19 +1502,22 @@ export const GamePlayPhase = ({
                 const isNewCard = newCardId === card.id;
                 const isRecyclingExit = recyclingMarket === 'black' && recyclePhase === 'exit';
                 const isRecyclingEnter = recyclingMarket === 'black' && recyclePhase === 'enter';
+                const isDealt = index < dealtCardCount;
 
                 return (
                   <motion.div
                     key={card.id}
-                    initial={isNewCard || isRecyclingEnter ? { rotateY: 90, opacity: 0 } : false}
+                    initial={{ rotateY: 90, opacity: 0, scale: 0.8 }}
                     animate={{
-                      rotateY: 0,
-                      opacity: isAnimating || isRecyclingExit ? 0 : 1,
+                      rotateY: isDealt || isNewCard || isRecyclingEnter ? 0 : 90,
+                      opacity: !isDealt ? 0 : isAnimating || isRecyclingExit ? 0 : 1,
+                      scale: isDealt ? 1 : 0.8,
                       y: isRecyclingExit ? 100 : 0,
                     }}
                     transition={{
                       rotateY: { duration: 0.4, ease: 'easeOut' },
                       opacity: { duration: 0.25, delay: isRecyclingExit ? index * 0.05 : 0 },
+                      scale: { duration: 0.3 },
                       y: { duration: 0.3, delay: index * 0.05, ease: 'easeIn' },
                     }}
                     style={{ perspective: 1000 }}
@@ -1803,6 +1841,6 @@ export const GamePlayPhase = ({
           position={dragPosition}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
