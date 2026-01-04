@@ -6,7 +6,7 @@ import { PuzzleCardDisplay } from './PuzzleCardDisplay';
 import { DroppablePuzzleCard, isValidPlacement } from './DroppablePuzzleCard';
 import { DragOverlay } from './DraggablePiece';
 import { ALL_PUZZLES } from '../data/puzzles';
-import { PIECE_DEFINITIONS } from '../data/pieces';
+import { PIECE_DEFINITIONS, PIECES_BY_LEVEL } from '../data/pieces';
 import type { GameState, WorkingPuzzle, PlacedPiece, PuzzleCard, PieceType } from '../types/game';
 
 interface GamePlayPhaseProps {
@@ -51,6 +51,12 @@ export const GamePlayPhase = ({
 
   // アクションアナウンス
   const [announcement, setAnnouncement] = useState<string | null>(null);
+
+  // レベルアップ選択モード
+  const [levelUpMode, setLevelUpMode] = useState<{
+    pieceId: string;
+    targetLevel: number;
+  } | null>(null);
 
   // アニメーション用のRef
   const workingPuzzleSlotRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -395,6 +401,95 @@ export const GamePlayPhase = ({
     setFlipped((prev) => !prev);
   };
 
+  // レベル1ピース獲得
+  const handleGetLevel1Piece = () => {
+    if (!onUpdateGameState) return;
+
+    const newPiece = {
+      id: `piece-${Date.now()}-dot`,
+      type: 'dot' as PieceType,
+      rotation: 0 as const,
+    };
+
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === currentPlayerId) {
+        return { ...p, pieces: [...p.pieces, newPiece] };
+      }
+      return p;
+    });
+
+    onUpdateGameState({ players: updatedPlayers });
+    setAnnouncement('レベル1ピースを獲得');
+  };
+
+  // レベルアップ開始
+  const handleStartLevelUp = () => {
+    if (!selectedPiece) return;
+    const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
+    if (currentLevel >= 4) return; // レベル4以上はアップ不可
+
+    setLevelUpMode({
+      pieceId: selectedPiece.id,
+      targetLevel: currentLevel + 1,
+    });
+  };
+
+  // レベルアップ確定（新しいピースタイプを選択）
+  const handleConfirmLevelUp = (newType: PieceType) => {
+    if (!levelUpMode || !onUpdateGameState) return;
+
+    const updatedPieces = currentPlayer.pieces
+      .filter((p) => p.id !== levelUpMode.pieceId)
+      .concat({
+        id: `piece-${Date.now()}-${newType}`,
+        type: newType,
+        rotation: 0 as const,
+      });
+
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === currentPlayerId) {
+        return { ...p, pieces: updatedPieces };
+      }
+      return p;
+    });
+
+    onUpdateGameState({ players: updatedPlayers });
+    setLevelUpMode(null);
+    setSelectedPieceId(null);
+    setAnnouncement(`レベル${levelUpMode.targetLevel}にアップ`);
+  };
+
+  // レベルダウン
+  const handleLevelDown = () => {
+    if (!selectedPiece || !onUpdateGameState) return;
+
+    const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
+    if (currentLevel <= 1) return; // レベル1以下はダウン不可
+
+    const targetLevel = currentLevel - 1;
+    const targetTypes = PIECES_BY_LEVEL[targetLevel];
+    const newType = targetTypes[0]; // レベルダウンは最初のタイプに固定
+
+    const updatedPieces = currentPlayer.pieces
+      .filter((p) => p.id !== selectedPiece.id)
+      .concat({
+        id: `piece-${Date.now()}-${newType}`,
+        type: newType,
+        rotation: 0 as const,
+      });
+
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === currentPlayerId) {
+        return { ...p, pieces: updatedPieces };
+      }
+      return p;
+    });
+
+    onUpdateGameState({ players: updatedPlayers });
+    setSelectedPieceId(null);
+    setAnnouncement(`レベル${targetLevel}にダウン`);
+  };
+
   // ドラッグ中のピース情報
   const draggingPiece = isDragging && selectedPiece
     ? { type: selectedPiece.type, rotation, flipped }
@@ -689,8 +784,42 @@ export const GamePlayPhase = ({
           <div className="bg-slate-800/50 rounded-lg p-4 flex-1 min-w-0">
             <h2 className="text-white font-bold mb-3">手持ちピース（{currentPlayer.pieces.length}）</h2>
 
+            {/* アクションボタン */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={handleGetLevel1Piece}
+                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-white text-sm font-medium"
+              >
+                レベル1ピース獲得
+              </button>
+            </div>
+
+            {/* レベルアップ選択モード */}
+            {levelUpMode && (
+              <div className="bg-purple-900/50 rounded-lg p-3 mb-4 border border-purple-400">
+                <div className="text-white text-sm mb-2">レベル{levelUpMode.targetLevel}のピースを選択：</div>
+                <div className="flex gap-2">
+                  {PIECES_BY_LEVEL[levelUpMode.targetLevel].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleConfirmLevelUp(type)}
+                      className="p-2 bg-purple-700 hover:bg-purple-600 rounded"
+                    >
+                      <PieceDisplay type={type} size="sm" />
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setLevelUpMode(null)}
+                    className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 選択中のピースのコントロール */}
-            {selectedPiece && (
+            {selectedPiece && !levelUpMode && (
               <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -700,9 +829,10 @@ export const GamePlayPhase = ({
                       flipped={flipped}
                       size="md"
                     />
-                    <span className="text-white/60 text-sm">
-                      ドラッグして配置
-                    </span>
+                    <div className="text-white/60 text-sm">
+                      <div>Lv.{PIECE_DEFINITIONS[selectedPiece.type].level}</div>
+                      <div>ドラッグして配置</div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -721,6 +851,22 @@ export const GamePlayPhase = ({
                     >
                       <FlipHorizontal className="w-5 h-5" />
                     </button>
+                    {PIECE_DEFINITIONS[selectedPiece.type].level < 4 && (
+                      <button
+                        onClick={handleStartLevelUp}
+                        className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-white text-xs"
+                      >
+                        UP
+                      </button>
+                    )}
+                    {PIECE_DEFINITIONS[selectedPiece.type].level > 1 && (
+                      <button
+                        onClick={handleLevelDown}
+                        className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs"
+                      >
+                        DOWN
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
