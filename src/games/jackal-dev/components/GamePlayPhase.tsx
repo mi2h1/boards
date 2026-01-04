@@ -86,7 +86,7 @@ export const GamePlayPhase = ({
   const isValidInput = !isNaN(inputValueNum) && inputValueNum >= minDeclareValue;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 p-4 pb-44 md:pb-4">
       <div className="max-w-5xl mx-auto">
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-4">
@@ -141,10 +141,10 @@ export const GamePlayPhase = ({
           </div>
         )}
 
-        {/* 上段: インフォボード(70%) + 宣言エリア(30%) */}
-        <div className="flex gap-4 mb-4">
-          {/* 左: インフォボード（固定高さ） */}
-          <div className="w-[70%] h-40 bg-slate-800/80 rounded-xl p-4 flex flex-col justify-center">
+        {/* 上段: インフォボード（スマホ: 全幅 / PC: 70%+30%横並び） */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          {/* インフォボード（スマホ: 全幅 / PC: 70%） */}
+          <div className="w-full md:w-[70%] h-40 bg-slate-800/80 rounded-xl p-4 flex flex-col justify-center">
             {/* 現在の宣言値 */}
             <div className="text-center mb-3">
               <div className="text-slate-400 text-sm mb-1">
@@ -172,8 +172,8 @@ export const GamePlayPhase = ({
             </div>
           </div>
 
-          {/* 右: 宣言エリア（固定高さ） */}
-          <div className="w-[30%] h-40 bg-slate-800/80 rounded-xl p-4 flex flex-col">
+          {/* 宣言エリア（PC: 30%横並び / スマホ: 下部固定で別途表示） */}
+          <div className="hidden md:flex w-[30%] h-40 bg-slate-800/80 rounded-xl p-4 flex-col">
             {phase === 'declaring' && isMyTurn ? (
               <>
                 {/* 数字入力 */}
@@ -334,6 +334,75 @@ export const GamePlayPhase = ({
                 return `${p?.name}:${card.label}`;
               }).join(', ')}</span>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* スマホ用: 下部固定の入力パネル */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden bg-slate-900/95 backdrop-blur border-t border-slate-700 p-4">
+        {phase === 'declaring' && isMyTurn ? (
+          <div className="max-w-lg mx-auto">
+            {/* 数字入力 */}
+            <div className="text-slate-400 text-xs mb-2 text-center">
+              {currentDeclaredValue !== null
+                ? `${minDeclareValue}以上を宣言`
+                : '数字を宣言'}
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={() => {
+                  const current = parseInt(inputValue, 10) || minDeclareValue;
+                  if (current > minDeclareValue) {
+                    setInputValue(String(current - 1));
+                  }
+                }}
+                disabled={!inputValue || parseInt(inputValue, 10) <= minDeclareValue}
+                className="w-12 h-12 bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700 disabled:text-slate-500 rounded-lg text-white font-bold text-2xl transition-all flex-shrink-0"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={String(minDeclareValue)}
+                min={minDeclareValue}
+                className="flex-1 min-w-0 px-3 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl text-center font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                onClick={() => {
+                  const current = parseInt(inputValue, 10) || minDeclareValue - 1;
+                  setInputValue(String(current + 1));
+                }}
+                className="w-12 h-12 bg-slate-600 hover:bg-slate-500 rounded-lg text-white font-bold text-2xl transition-all flex-shrink-0"
+              >
+                +
+              </button>
+            </div>
+
+            {/* 宣言ボタン / ジャッカルボタン */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeclare}
+                disabled={!isValidInput}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 rounded-lg text-white font-bold transition-all"
+              >
+                宣言
+              </button>
+              {currentDeclaredValue !== null && (
+                <button
+                  onClick={handleCallJackal}
+                  className="flex-1 py-3 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-lg text-white font-bold transition-all"
+                >
+                  ジャッカル！
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center text-slate-400 py-2">
+            {isMyTurn ? 'ラウンド開始中...' : `${currentPlayer?.name}のターンです`}
           </div>
         )}
       </div>
