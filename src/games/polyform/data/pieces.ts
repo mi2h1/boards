@@ -14,7 +14,7 @@ export const PIECE_DEFINITIONS: Record<PieceType, PieceDefinition> = {
     type: 'i2',
     level: 2,
     shape: [[0, 0], [1, 0]],
-    color: 'bg-orange-400',
+    color: 'bg-green-400',
   },
 
   // Level 3
@@ -22,25 +22,13 @@ export const PIECE_DEFINITIONS: Record<PieceType, PieceDefinition> = {
     type: 'i3',
     level: 3,
     shape: [[0, 0], [1, 0], [2, 0]],
-    color: 'bg-red-400',
-  },
-  l3: {
-    type: 'l3',
-    level: 3,
-    shape: [[0, 0], [1, 0], [1, 1]],
-    color: 'bg-red-400',
+    color: 'bg-sky-300', // パステル青
   },
   v3: {
     type: 'v3',
     level: 3,
     shape: [[0, 0], [0, 1], [1, 1]],
-    color: 'bg-red-400',
-  },
-  t3_half: {
-    type: 't3_half',
-    level: 3,
-    shape: [[0, 0], [1, 0], [0, 1]],
-    color: 'bg-red-400',
+    color: 'bg-amber-400', // 黄色〜オレンジ
   },
 
   // Level 4
@@ -54,25 +42,25 @@ export const PIECE_DEFINITIONS: Record<PieceType, PieceDefinition> = {
     type: 'l4',
     level: 4,
     shape: [[0, 0], [1, 0], [2, 0], [2, 1]],
-    color: 'bg-purple-400',
+    color: 'bg-cyan-400', // 水色
   },
   t4: {
     type: 't4',
     level: 4,
     shape: [[0, 0], [1, 0], [2, 0], [1, 1]],
-    color: 'bg-purple-400',
+    color: 'bg-pink-400',
   },
   s4: {
     type: 's4',
     level: 4,
     shape: [[0, 0], [1, 0], [1, 1], [2, 1]],
-    color: 'bg-purple-400',
+    color: 'bg-orange-400',
   },
   o4: {
     type: 'o4',
     level: 4,
     shape: [[0, 0], [1, 0], [0, 1], [1, 1]],
-    color: 'bg-purple-400',
+    color: 'bg-red-300', // パステル赤
   },
 };
 
@@ -81,9 +69,7 @@ export const INITIAL_PIECE_STOCK: Record<PieceType, number> = {
   dot: 15,
   i2: 12,
   i3: 6,
-  l3: 6,
   v3: 6,
-  t3_half: 6,
   i4: 6,
   l4: 6,
   t4: 6,
@@ -95,7 +81,7 @@ export const INITIAL_PIECE_STOCK: Record<PieceType, number> = {
 export const PIECES_BY_LEVEL: Record<number, PieceType[]> = {
   1: ['dot'],
   2: ['i2'],
-  3: ['i3', 'l3', 'v3', 't3_half'],
+  3: ['i3', 'v3'],
   4: ['i4', 'l4', 't4', 's4', 'o4'],
 };
 
@@ -104,9 +90,7 @@ export const PIECE_NAMES: Record<PieceType, string> = {
   dot: '1マス',
   i2: 'I字(2)',
   i3: 'I字(3)',
-  l3: 'L字(3)',
   v3: 'V字',
-  t3_half: '角',
   i4: 'I字(4)',
   l4: 'L字(4)',
   t4: 'T字',

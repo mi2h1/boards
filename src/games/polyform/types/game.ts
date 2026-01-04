@@ -1,11 +1,11 @@
-// ピースの形状タイプ
+// ピースの形状タイプ（9種類）
 export type PieceType =
   // Level 1
   | 'dot'
   // Level 2
   | 'i2'
   // Level 3
-  | 'i3' | 'l3' | 'v3' | 't3_half'
+  | 'i3' | 'v3'
   // Level 4
   | 'i4' | 'l4' | 't4' | 's4' | 'o4';
 
@@ -29,7 +29,7 @@ export interface PuzzleCard {
   id: string;
   type: 'white' | 'black';
   points: number;
-  rewardPieceLevel: number | null;
+  rewardPieceType: PieceType | null; // 報酬ピースの種類（nullは報酬なし）
   shape: boolean[][]; // 2次元配列でマス目を表現
   width: number;
   height: number;
