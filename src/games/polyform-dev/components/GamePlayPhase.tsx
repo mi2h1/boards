@@ -778,15 +778,14 @@ export const GamePlayPhase = ({
 
           {/* 右: 手持ちピース */}
           <div className="bg-slate-800/50 rounded-lg p-4 flex-1 min-w-0">
-            <h2 className="text-white font-bold mb-3">手持ちピース（{currentPlayer.pieces.length}）</h2>
-
-            {/* アクションボタン */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-white font-bold">手持ちピース（{currentPlayer.pieces.length}）</h2>
               <button
                 onClick={handleGetLevel1Piece}
-                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-500 rounded text-white text-sm font-medium"
+                className="flex items-center gap-1.5 px-2 py-1 border-2 border-yellow-500 hover:bg-yellow-500/20 rounded text-yellow-400 text-sm font-medium transition-colors"
               >
-                レベル1ピース獲得
+                <PieceDisplay type="dot" size="xs" />
+                <span>ゲット</span>
               </button>
             </div>
 
