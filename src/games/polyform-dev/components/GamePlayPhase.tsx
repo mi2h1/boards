@@ -180,6 +180,59 @@ export const GamePlayPhase = ({
     setAnimatingCard({ cardId: puzzleId, type: puzzleType, targetSlotIndex });
   };
 
+  // 山札から直接カードを引く
+  const handleDrawFromDeck = (deckType: 'white' | 'black') => {
+    if (!onUpdateGameState) return;
+
+    // 所持パズルが4枚以上なら取得不可
+    if (currentPlayer.workingPuzzles.length >= 4) {
+      console.log('所持パズルが上限です');
+      return;
+    }
+
+    const deck = deckType === 'white' ? [...gameState.whitePuzzleDeck] : [...gameState.blackPuzzleDeck];
+
+    // 山札が空なら引けない
+    if (deck.length === 0) {
+      console.log('山札が空です');
+      return;
+    }
+
+    // 山札の一番上を引く
+    const drawnCardId = deck.shift()!;
+
+    // プレイヤーの所持パズルに追加
+    const newWorkingPuzzle: WorkingPuzzle = {
+      cardId: drawnCardId,
+      placedPieces: [],
+    };
+
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === currentPlayerId) {
+        return {
+          ...p,
+          workingPuzzles: [...p.workingPuzzles, newWorkingPuzzle],
+        };
+      }
+      return p;
+    });
+
+    // ゲーム状態を更新
+    const updates: Partial<GameState> = {
+      players: updatedPlayers,
+    };
+
+    if (deckType === 'white') {
+      updates.whitePuzzleDeck = deck;
+    } else {
+      updates.blackPuzzleDeck = deck;
+    }
+
+    onUpdateGameState(updates);
+    setAnnouncement('山札からカードを引いた');
+    console.log('山札から取得:', { drawnCardId, deckType });
+  };
+
   // アニメーション完了時の実際の状態更新
   const completeCardAnimation = () => {
     if (!animatingCard || !onUpdateGameState) return;
@@ -661,16 +714,24 @@ export const GamePlayPhase = ({
                 );
               })}
               {/* 山札（重なったカード風） */}
-              <div className="relative w-[180px] h-[225px] flex-shrink-0">
-                {/* 背面カード（3枚重ね） */}
-                <div className="absolute top-1.5 left-1.5 w-[180px] h-[225px] bg-slate-300 border-2 border-slate-400 rounded-lg" />
-                <div className="absolute top-1 left-1 w-[180px] h-[225px] bg-slate-200 border-2 border-slate-400 rounded-lg" />
-                {/* 表面カード */}
-                <div className="absolute top-0 left-0 w-[180px] h-[225px] bg-slate-100 border-2 border-slate-400 rounded-lg flex flex-col items-center justify-center">
-                  <div className="text-slate-500 text-xs mb-1">山札</div>
-                  <div className="text-slate-800 text-4xl font-bold">{gameState.whitePuzzleDeck.length}</div>
-                </div>
-              </div>
+              {(() => {
+                const canDraw = currentPlayer.workingPuzzles.length < 4 && gameState.whitePuzzleDeck.length > 0 && !animatingCard;
+                return (
+                  <div
+                    className={`relative w-[180px] h-[225px] flex-shrink-0 ${canDraw ? 'cursor-pointer' : 'opacity-60'}`}
+                    onClick={() => canDraw && handleDrawFromDeck('white')}
+                  >
+                    {/* 背面カード（3枚重ね） */}
+                    <div className="absolute top-1.5 left-1.5 w-[180px] h-[225px] bg-slate-300 border-2 border-slate-400 rounded-lg" />
+                    <div className="absolute top-1 left-1 w-[180px] h-[225px] bg-slate-200 border-2 border-slate-400 rounded-lg" />
+                    {/* 表面カード */}
+                    <div className={`absolute top-0 left-0 w-[180px] h-[225px] bg-slate-100 border-2 border-slate-400 rounded-lg flex flex-col items-center justify-center transition-all ${canDraw ? 'hover:border-teal-400 hover:shadow-lg hover:shadow-teal-400/30' : ''}`}>
+                      <div className="text-slate-500 text-xs mb-1">山札</div>
+                      <div className="text-slate-800 text-4xl font-bold">{gameState.whitePuzzleDeck.length}</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -704,16 +765,24 @@ export const GamePlayPhase = ({
                 );
               })}
               {/* 山札（重なったカード風） */}
-              <div className="relative w-[180px] h-[225px] flex-shrink-0">
-                {/* 背面カード（3枚重ね） */}
-                <div className="absolute top-1.5 left-1.5 w-[180px] h-[225px] bg-slate-900 border-2 border-slate-600 rounded-lg" />
-                <div className="absolute top-1 left-1 w-[180px] h-[225px] border-2 border-slate-600 rounded-lg" style={{ backgroundColor: '#1e293b' }} />
-                {/* 表面カード */}
-                <div className="absolute top-0 left-0 w-[180px] h-[225px] bg-slate-800 border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center">
-                  <div className="text-slate-400 text-xs mb-1">山札</div>
-                  <div className="text-white text-4xl font-bold">{gameState.blackPuzzleDeck.length}</div>
-                </div>
-              </div>
+              {(() => {
+                const canDraw = currentPlayer.workingPuzzles.length < 4 && gameState.blackPuzzleDeck.length > 0 && !animatingCard;
+                return (
+                  <div
+                    className={`relative w-[180px] h-[225px] flex-shrink-0 ${canDraw ? 'cursor-pointer' : 'opacity-60'}`}
+                    onClick={() => canDraw && handleDrawFromDeck('black')}
+                  >
+                    {/* 背面カード（3枚重ね） */}
+                    <div className="absolute top-1.5 left-1.5 w-[180px] h-[225px] bg-slate-900 border-2 border-slate-600 rounded-lg" />
+                    <div className="absolute top-1 left-1 w-[180px] h-[225px] border-2 border-slate-600 rounded-lg" style={{ backgroundColor: '#1e293b' }} />
+                    {/* 表面カード */}
+                    <div className={`absolute top-0 left-0 w-[180px] h-[225px] bg-slate-800 border-2 border-slate-600 rounded-lg flex flex-col items-center justify-center transition-all ${canDraw ? 'hover:border-teal-400 hover:shadow-lg hover:shadow-teal-400/30' : ''}`}>
+                      <div className="text-slate-400 text-xs mb-1">山札</div>
+                      <div className="text-white text-4xl font-bold">{gameState.blackPuzzleDeck.length}</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
