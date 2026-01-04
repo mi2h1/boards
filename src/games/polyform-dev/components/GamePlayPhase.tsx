@@ -293,7 +293,7 @@ export const GamePlayPhase = ({
         {/* 2カラムレイアウト */}
         <div className="flex gap-4 items-start">
           {/* 左カラム: 他プレイヤー情報 */}
-          <div className="w-64 flex-shrink-0">
+          <div className="w-80 flex-shrink-0">
             <div className="bg-slate-800/50 rounded-lg p-3">
               <h3 className="text-white font-bold text-sm mb-3">他プレイヤー</h3>
               {otherPlayers.length > 0 ? (
