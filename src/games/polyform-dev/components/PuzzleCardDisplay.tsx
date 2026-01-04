@@ -100,12 +100,16 @@ export const PuzzleCardDisplay = ({
                 const placed = placedCells.get(key);
 
                 if (!isActive) {
-                  // 枠外は透明
+                  // 枠外は「・」で表示
                   return (
                     <div
                       key={x}
-                      className={`${cellSize}`}
-                    />
+                      className={`${cellSize} flex items-center justify-center`}
+                    >
+                      <div className={`w-1 h-1 rounded-full ${
+                        card.type === 'white' ? 'bg-slate-500' : 'bg-slate-300'
+                      }`} />
+                    </div>
                   );
                 }
 
