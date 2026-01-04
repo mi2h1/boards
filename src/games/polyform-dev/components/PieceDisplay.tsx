@@ -84,6 +84,14 @@ export const PieceDisplay = ({
     lg: 'w-7 h-7',
   }[size];
 
+  // 角丸（小さいサイズは角丸なし）
+  const cellRounded = {
+    xs: '',
+    sm: 'rounded-[1px]',
+    md: 'rounded-sm',
+    lg: 'rounded-sm',
+  }[size];
+
   // グリッドを生成
   const grid: boolean[][] = Array(height)
     .fill(null)
@@ -110,7 +118,7 @@ export const PieceDisplay = ({
             {row.map((filled, x) => (
               <div
                 key={x}
-                className={`${cellSize} rounded-sm ${
+                className={`${cellSize} ${cellRounded} ${
                   filled ? definition.color : 'bg-transparent'
                 }`}
               />
