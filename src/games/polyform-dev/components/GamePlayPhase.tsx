@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { RotateCw, FlipHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PieceDisplay } from './PieceDisplay';
+import { PieceDisplay, getTransformedShape } from './PieceDisplay';
 import { PuzzleCardDisplay } from './PuzzleCardDisplay';
 import { DroppablePuzzleCard, isValidPlacement } from './DroppablePuzzleCard';
 import { DragOverlay } from './DraggablePiece';
@@ -264,19 +264,49 @@ export const GamePlayPhase = ({
       position,
     };
 
-    // 状態を更新（ローカルのみ、Firebaseへの同期は後で実装）
-    const updatedWorkingPuzzles = currentPlayer.workingPuzzles.map((wp) => {
-      if (wp.cardId === puzzleId) {
-        return {
-          ...wp,
-          placedPieces: [...wp.placedPieces, newPlacedPiece],
-        };
-      }
-      return wp;
+    const newPlacedPieces = [...workingPuzzle.placedPieces, newPlacedPiece];
+
+    // 完成判定
+    const totalCells = card.shape.flat().filter(Boolean).length;
+    let filledCells = 0;
+    newPlacedPieces.forEach((placed) => {
+      const shape = getTransformedShape(placed.type, placed.rotation, false);
+      filledCells += shape.length;
     });
+    const isCompleted = filledCells === totalCells;
 
     // 手持ちからピースを削除
-    const updatedPieces = currentPlayer.pieces.filter((p) => p.id !== selectedPiece.id);
+    let updatedPieces = currentPlayer.pieces.filter((p) => p.id !== selectedPiece.id);
+    let updatedScore = currentPlayer.score;
+    let updatedWorkingPuzzles = currentPlayer.workingPuzzles;
+
+    if (isCompleted) {
+      // 完成時：スコア加算
+      updatedScore += card.points;
+
+      // 報酬ピースがあれば追加
+      if (card.rewardPieceType) {
+        const rewardPiece = {
+          id: `reward-${Date.now()}-${card.rewardPieceType}`,
+          type: card.rewardPieceType,
+          rotation: 0 as const,
+        };
+        updatedPieces = [...updatedPieces, rewardPiece];
+      }
+
+      // パズルを所持から削除（配置済みピースは戻さない）
+      updatedWorkingPuzzles = currentPlayer.workingPuzzles.filter((wp) => wp.cardId !== puzzleId);
+
+      console.log('パズル完成！', { puzzleId, points: card.points, reward: card.rewardPieceType });
+    } else {
+      // 未完成：配置を更新
+      updatedWorkingPuzzles = currentPlayer.workingPuzzles.map((wp) => {
+        if (wp.cardId === puzzleId) {
+          return { ...wp, placedPieces: newPlacedPieces };
+        }
+        return wp;
+      });
+    }
 
     // 選択解除
     setSelectedPieceId(null);
@@ -291,6 +321,7 @@ export const GamePlayPhase = ({
           return {
             ...p,
             pieces: updatedPieces,
+            score: updatedScore,
             workingPuzzles: updatedWorkingPuzzles,
           };
         }
@@ -299,7 +330,7 @@ export const GamePlayPhase = ({
       onUpdateGameState({ players: updatedPlayers });
     }
 
-    console.log('ピース配置:', { puzzleId, position, piece: selectedPiece.type });
+    console.log('ピース配置:', { puzzleId, position, piece: selectedPiece.type, completed: isCompleted });
   };
 
   // 回転
