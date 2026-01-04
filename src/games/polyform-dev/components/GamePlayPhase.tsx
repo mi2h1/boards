@@ -774,13 +774,13 @@ export const GamePlayPhase = ({
                     initial={isNewCard || isRecyclingEnter ? { rotateY: 90, opacity: 0 } : false}
                     animate={{
                       rotateY: 0,
-                      opacity: isAnimating ? 0 : 1,
-                      x: isRecyclingExit ? 200 + index * 50 : 0,
+                      opacity: isAnimating || isRecyclingExit ? 0 : 1,
+                      y: isRecyclingExit ? 100 : 0,
                     }}
                     transition={{
                       rotateY: { duration: 0.4, ease: 'easeOut' },
-                      opacity: { duration: 0.2 },
-                      x: { duration: 0.35, delay: index * 0.05, ease: 'easeIn' },
+                      opacity: { duration: 0.25, delay: isRecyclingExit ? index * 0.05 : 0 },
+                      y: { duration: 0.3, delay: index * 0.05, ease: 'easeIn' },
                     }}
                     style={{ perspective: 1000 }}
                   >
@@ -856,13 +856,13 @@ export const GamePlayPhase = ({
                     initial={isNewCard || isRecyclingEnter ? { rotateY: 90, opacity: 0 } : false}
                     animate={{
                       rotateY: 0,
-                      opacity: isAnimating ? 0 : 1,
-                      x: isRecyclingExit ? 200 + index * 50 : 0,
+                      opacity: isAnimating || isRecyclingExit ? 0 : 1,
+                      y: isRecyclingExit ? 100 : 0,
                     }}
                     transition={{
                       rotateY: { duration: 0.4, ease: 'easeOut' },
-                      opacity: { duration: 0.2 },
-                      x: { duration: 0.35, delay: index * 0.05, ease: 'easeIn' },
+                      opacity: { duration: 0.25, delay: isRecyclingExit ? index * 0.05 : 0 },
+                      y: { duration: 0.3, delay: index * 0.05, ease: 'easeIn' },
                     }}
                     style={{ perspective: 1000 }}
                   >
