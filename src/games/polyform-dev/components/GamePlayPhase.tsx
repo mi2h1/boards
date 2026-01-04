@@ -41,6 +41,17 @@ export const GamePlayPhase = ({
   } | null>(null);
   const [newCardId, setNewCardId] = useState<string | null>(null);
 
+  // パズル完成アニメーション状態
+  const [completedPuzzleId, setCompletedPuzzleId] = useState<string | null>(null);
+  const [pendingCompletion, setPendingCompletion] = useState<{
+    puzzleId: string;
+    points: number;
+    rewardPieceType: PieceType | null;
+  } | null>(null);
+
+  // アクションアナウンス
+  const [announcement, setAnnouncement] = useState<string | null>(null);
+
   // アニメーション用のRef
   const workingPuzzleSlotRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -54,6 +65,57 @@ export const GamePlayPhase = ({
 
     return () => clearTimeout(timer);
   }, [animatingCard]);
+
+  // パズル完成アニメーション処理
+  useEffect(() => {
+    if (!pendingCompletion || !onUpdateGameState) return;
+
+    // ハイライト表示
+    setCompletedPuzzleId(pendingCompletion.puzzleId);
+
+    const timer = setTimeout(() => {
+      const { puzzleId, points, rewardPieceType } = pendingCompletion;
+
+      // スコア加算、報酬ピース付与、パズル削除
+      const player = gameState.players.find((p) => p.id === currentPlayerId);
+      if (!player) return;
+
+      let updatedPieces = [...player.pieces];
+      if (rewardPieceType) {
+        updatedPieces.push({
+          id: `reward-${Date.now()}-${rewardPieceType}`,
+          type: rewardPieceType,
+          rotation: 0 as const,
+        });
+      }
+
+      const updatedPlayers = gameState.players.map((p) => {
+        if (p.id === currentPlayerId) {
+          return {
+            ...p,
+            score: p.score + points,
+            pieces: updatedPieces,
+            workingPuzzles: p.workingPuzzles.filter((wp) => wp.cardId !== puzzleId),
+          };
+        }
+        return p;
+      });
+
+      onUpdateGameState({ players: updatedPlayers });
+      setCompletedPuzzleId(null);
+      setPendingCompletion(null);
+      setAnnouncement(`パズル完成！ +${points}pt`);
+    }, 800); // ハイライト表示時間
+
+    return () => clearTimeout(timer);
+  }, [pendingCompletion]);
+
+  // アナウンス自動消去
+  useEffect(() => {
+    if (!announcement) return;
+    const timer = setTimeout(() => setAnnouncement(null), 2000);
+    return () => clearTimeout(timer);
+  }, [announcement]);
 
   // 現在のプレイヤーを取得
   const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
@@ -172,6 +234,7 @@ export const GamePlayPhase = ({
     setNewCardId(addedCardId);
     onUpdateGameState(updates);
     setAnimatingCard(null);
+    setAnnouncement('カードを取得');
 
     // 新カードのフリップアニメーション終了後にnewCardIdをリセット
     if (addedCardId) {
@@ -276,37 +339,15 @@ export const GamePlayPhase = ({
     const isCompleted = filledCells === totalCells;
 
     // 手持ちからピースを削除
-    let updatedPieces = currentPlayer.pieces.filter((p) => p.id !== selectedPiece.id);
-    let updatedScore = currentPlayer.score;
-    let updatedWorkingPuzzles = currentPlayer.workingPuzzles;
+    const updatedPieces = currentPlayer.pieces.filter((p) => p.id !== selectedPiece.id);
 
-    if (isCompleted) {
-      // 完成時：スコア加算
-      updatedScore += card.points;
-
-      // 報酬ピースがあれば追加
-      if (card.rewardPieceType) {
-        const rewardPiece = {
-          id: `reward-${Date.now()}-${card.rewardPieceType}`,
-          type: card.rewardPieceType,
-          rotation: 0 as const,
-        };
-        updatedPieces = [...updatedPieces, rewardPiece];
+    // 配置を更新
+    const updatedWorkingPuzzles = currentPlayer.workingPuzzles.map((wp) => {
+      if (wp.cardId === puzzleId) {
+        return { ...wp, placedPieces: newPlacedPieces };
       }
-
-      // パズルを所持から削除（配置済みピースは戻さない）
-      updatedWorkingPuzzles = currentPlayer.workingPuzzles.filter((wp) => wp.cardId !== puzzleId);
-
-      console.log('パズル完成！', { puzzleId, points: card.points, reward: card.rewardPieceType });
-    } else {
-      // 未完成：配置を更新
-      updatedWorkingPuzzles = currentPlayer.workingPuzzles.map((wp) => {
-        if (wp.cardId === puzzleId) {
-          return { ...wp, placedPieces: newPlacedPieces };
-        }
-        return wp;
-      });
-    }
+      return wp;
+    });
 
     // 選択解除
     setSelectedPieceId(null);
@@ -314,20 +355,31 @@ export const GamePlayPhase = ({
     setFlipped(false);
     setIsDragging(false);
 
-    // Firebaseに同期
+    // Firebaseに同期（ピース配置のみ）
     if (onUpdateGameState) {
       const updatedPlayers = gameState.players.map((p) => {
         if (p.id === currentPlayerId) {
           return {
             ...p,
             pieces: updatedPieces,
-            score: updatedScore,
             workingPuzzles: updatedWorkingPuzzles,
           };
         }
         return p;
       });
       onUpdateGameState({ players: updatedPlayers });
+    }
+
+    // 完成時は遅延処理をセット
+    if (isCompleted) {
+      setPendingCompletion({
+        puzzleId,
+        points: card.points,
+        rewardPieceType: card.rewardPieceType || null,
+      });
+      console.log('パズル完成！', { puzzleId, points: card.points, reward: card.rewardPieceType });
+    } else {
+      setAnnouncement('ピースを配置');
     }
 
     console.log('ピース配置:', { puzzleId, position, piece: selectedPiece.type, completed: isCompleted });
@@ -461,6 +513,29 @@ export const GamePlayPhase = ({
 
           {/* 右カラム: メインコンテンツ */}
           <div className="flex-1 min-w-0">
+            {/* インフォボード */}
+            <div className="bg-slate-800/50 rounded-lg p-3 mb-4 flex items-center justify-between">
+              <div className="text-white">
+                <span className="text-white/60 text-sm">現在のターン：</span>
+                <span className="font-bold ml-1">
+                  {gameState.players[gameState.currentPlayerIndex]?.name}
+                </span>
+              </div>
+              <AnimatePresence mode="wait">
+                {announcement && (
+                  <motion.div
+                    key={announcement}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="bg-teal-600 text-white px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {announcement}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* 場のパズル（横長エリア） */}
             <div className="bg-slate-800/50 rounded-lg p-4 mb-4 overflow-x-auto">
           {/* 白パズル */}
@@ -579,6 +654,7 @@ export const GamePlayPhase = ({
                       card={wp.card}
                       placedPieces={wp.placedPieces}
                       size="md"
+                      completed={completedPuzzleId === wp.cardId}
                       draggingPiece={draggingPiece}
                       hoverPosition={hoverPuzzleId === wp.cardId ? hoverGridPosition : null}
                       onHover={(pos) => {

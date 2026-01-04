@@ -9,6 +9,7 @@ interface DroppablePuzzleCardProps {
   placedPieces?: PlacedPiece[];
   size?: 'sm' | 'md' | 'lg';
   selected?: boolean;
+  completed?: boolean; // 完成ハイライト
   // ドラッグ中のピース情報
   draggingPiece?: {
     type: PieceType;
@@ -70,6 +71,7 @@ export const DroppablePuzzleCard = ({
   placedPieces = [],
   size = 'md',
   selected = false,
+  completed = false,
   draggingPiece,
   hoverPosition,
   onDrop,
@@ -176,7 +178,7 @@ export const DroppablePuzzleCard = ({
           ? 'bg-slate-100 border-2 border-slate-300'
           : 'bg-slate-800 border-2 border-slate-600'
       } ${selected ? 'ring-2 ring-teal-400 ring-offset-2 ring-offset-slate-900' : ''} ${
-        isComplete ? 'ring-2 ring-yellow-400' : ''
+        completed ? 'ring-4 ring-green-400 shadow-lg shadow-green-400/50' : isComplete ? 'ring-2 ring-yellow-400' : ''
       } ${draggingPiece ? 'cursor-crosshair' : ''}`}
     >
       {/* カード情報ヘッダー（固定高さ） */}
