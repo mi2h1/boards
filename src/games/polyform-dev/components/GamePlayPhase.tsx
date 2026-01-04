@@ -52,10 +52,11 @@ export const GamePlayPhase = ({
   // アクションアナウンス
   const [announcement, setAnnouncement] = useState<string | null>(null);
 
-  // レベルアップ選択モード
-  const [levelUpMode, setLevelUpMode] = useState<{
+  // レベル変更選択モード
+  const [levelChangeMode, setLevelChangeMode] = useState<{
     pieceId: string;
     targetLevel: number;
+    direction: 'up' | 'down';
   } | null>(null);
 
   // アニメーション用のRef
@@ -426,52 +427,46 @@ export const GamePlayPhase = ({
   const handleStartLevelUp = () => {
     if (!selectedPiece) return;
     const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
-    if (currentLevel >= 4) return; // レベル4以上はアップ不可
+    if (currentLevel >= 4) return;
 
-    setLevelUpMode({
+    setLevelChangeMode({
       pieceId: selectedPiece.id,
       targetLevel: currentLevel + 1,
+      direction: 'up',
     });
   };
 
-  // レベルアップ確定（新しいピースタイプを選択）
-  const handleConfirmLevelUp = (newType: PieceType) => {
-    if (!levelUpMode || !onUpdateGameState) return;
-
-    const updatedPieces = currentPlayer.pieces
-      .filter((p) => p.id !== levelUpMode.pieceId)
-      .concat({
-        id: `piece-${Date.now()}-${newType}`,
-        type: newType,
-        rotation: 0 as const,
-      });
-
-    const updatedPlayers = gameState.players.map((p) => {
-      if (p.id === currentPlayerId) {
-        return { ...p, pieces: updatedPieces };
-      }
-      return p;
-    });
-
-    onUpdateGameState({ players: updatedPlayers });
-    setLevelUpMode(null);
-    setSelectedPieceId(null);
-    setAnnouncement(`レベル${levelUpMode.targetLevel}にアップ`);
-  };
-
-  // レベルダウン
-  const handleLevelDown = () => {
-    if (!selectedPiece || !onUpdateGameState) return;
-
+  // レベルダウン開始
+  const handleStartLevelDown = () => {
+    if (!selectedPiece) return;
     const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
-    if (currentLevel <= 1) return; // レベル1以下はダウン不可
+    if (currentLevel <= 1) return;
 
     const targetLevel = currentLevel - 1;
     const targetTypes = PIECES_BY_LEVEL[targetLevel];
-    const newType = targetTypes[0]; // レベルダウンは最初のタイプに固定
+
+    // 選択肢が1つならそのまま確定
+    if (targetTypes.length === 1) {
+      handleConfirmLevelChange(targetTypes[0]);
+    } else {
+      setLevelChangeMode({
+        pieceId: selectedPiece.id,
+        targetLevel,
+        direction: 'down',
+      });
+    }
+  };
+
+  // レベル変更確定（新しいピースタイプを選択）
+  const handleConfirmLevelChange = (newType: PieceType) => {
+    const pieceId = levelChangeMode?.pieceId ?? selectedPiece?.id;
+    if (!pieceId || !onUpdateGameState) return;
+
+    const targetLevel = levelChangeMode?.targetLevel ?? PIECE_DEFINITIONS[newType].level;
+    const direction = levelChangeMode?.direction ?? 'down';
 
     const updatedPieces = currentPlayer.pieces
-      .filter((p) => p.id !== selectedPiece.id)
+      .filter((p) => p.id !== pieceId)
       .concat({
         id: `piece-${Date.now()}-${newType}`,
         type: newType,
@@ -486,8 +481,9 @@ export const GamePlayPhase = ({
     });
 
     onUpdateGameState({ players: updatedPlayers });
+    setLevelChangeMode(null);
     setSelectedPieceId(null);
-    setAnnouncement(`レベル${targetLevel}にダウン`);
+    setAnnouncement(`レベル${targetLevel}に${direction === 'up' ? 'アップ' : 'ダウン'}`);
   };
 
   // ドラッグ中のピース情報
@@ -794,22 +790,32 @@ export const GamePlayPhase = ({
               </button>
             </div>
 
-            {/* レベルアップ選択モード */}
-            {levelUpMode && (
-              <div className="bg-purple-900/50 rounded-lg p-3 mb-4 border border-purple-400">
-                <div className="text-white text-sm mb-2">レベル{levelUpMode.targetLevel}のピースを選択：</div>
+            {/* レベル変更選択モード */}
+            {levelChangeMode && (
+              <div className={`rounded-lg p-3 mb-4 border ${
+                levelChangeMode.direction === 'up'
+                  ? 'bg-green-900/50 border-green-400'
+                  : 'bg-red-900/50 border-red-400'
+              }`}>
+                <div className="text-white text-sm mb-2">
+                  レベル{levelChangeMode.targetLevel}のピースを選択：
+                </div>
                 <div className="flex gap-2">
-                  {PIECES_BY_LEVEL[levelUpMode.targetLevel].map((type) => (
+                  {PIECES_BY_LEVEL[levelChangeMode.targetLevel].map((type) => (
                     <button
                       key={type}
-                      onClick={() => handleConfirmLevelUp(type)}
-                      className="p-2 bg-purple-700 hover:bg-purple-600 rounded"
+                      onClick={() => handleConfirmLevelChange(type)}
+                      className={`p-2 rounded ${
+                        levelChangeMode.direction === 'up'
+                          ? 'bg-green-700 hover:bg-green-600'
+                          : 'bg-red-700 hover:bg-red-600'
+                      }`}
                     >
                       <PieceDisplay type={type} size="sm" />
                     </button>
                   ))}
                   <button
-                    onClick={() => setLevelUpMode(null)}
+                    onClick={() => setLevelChangeMode(null)}
                     className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
                   >
                     キャンセル
@@ -819,7 +825,7 @@ export const GamePlayPhase = ({
             )}
 
             {/* 選択中のピースのコントロール */}
-            {selectedPiece && !levelUpMode && (
+            {selectedPiece && !levelChangeMode && (
               <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -861,7 +867,7 @@ export const GamePlayPhase = ({
                     )}
                     {PIECE_DEFINITIONS[selectedPiece.type].level > 1 && (
                       <button
-                        onClick={handleLevelDown}
+                        onClick={handleStartLevelDown}
                         className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs"
                       >
                         DOWN
