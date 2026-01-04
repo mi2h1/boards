@@ -197,10 +197,10 @@ export const GamePlayPhase = ({
     <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
       <div className="min-h-screen bg-black/20 p-4">
         {/* 2カラムレイアウト */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-start">
           {/* 左カラム: 他プレイヤー情報 */}
-          <div className="w-48 flex-shrink-0">
-            <div className="bg-slate-800/50 rounded-lg p-3 sticky top-4">
+          <div className="w-56 flex-shrink-0">
+            <div className="bg-slate-800/50 rounded-lg p-3">
               <h3 className="text-white font-bold text-sm mb-3">他プレイヤー</h3>
               {otherPlayers.length > 0 ? (
                 <div className="space-y-3">
@@ -227,9 +227,12 @@ export const GamePlayPhase = ({
           <div className="flex-1 min-w-0">
             {/* ヘッダー */}
             <div className="flex items-center justify-between mb-4">
-              <div className="text-white">
-                <span className="font-bold">{currentPlayer.name}</span>
-                <span className="text-white/60 ml-2">スコア: {currentPlayer.score}pt</span>
+              <div className="flex items-center gap-4">
+                <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-6" style={{ filter: 'brightness(0) invert(1)' }} />
+                <div className="text-white">
+                  <span className="font-bold">{currentPlayer.name}</span>
+                  <span className="text-white/60 ml-2">スコア: {currentPlayer.score}pt</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-white/60 text-sm">
