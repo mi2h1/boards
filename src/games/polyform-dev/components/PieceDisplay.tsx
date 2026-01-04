@@ -112,9 +112,9 @@ export const PieceDisplay = ({
         disabled ? 'opacity-40' : ''
       }`}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-px">
         {grid.map((row, y) => (
-          <div key={y} className="flex gap-0.5">
+          <div key={y} className="flex gap-px">
             {row.map((filled, x) => (
               <div
                 key={x}

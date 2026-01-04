@@ -88,9 +88,9 @@ export const PuzzleCardDisplay = ({
 
       {/* 5x5グリッド（下寄せ） */}
       <div className="flex-1 flex items-end justify-center">
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-px">
           {card.shape.map((row, y) => (
-            <div key={y} className="flex gap-0.5">
+            <div key={y} className="flex gap-px">
               {row.map((isActive, x) => {
                 const key = `${x},${y}`;
                 const placed = placedCells.get(key);

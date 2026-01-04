@@ -72,9 +72,9 @@ export const DraggablePiece = ({
       }`}
       style={{ touchAction: 'none' }}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-px">
         {grid.map((row, y) => (
-          <div key={y} className="flex gap-0.5">
+          <div key={y} className="flex gap-px">
             {row.map((filled, x) => (
               <div
                 key={x}
@@ -140,9 +140,9 @@ export const DragOverlay = ({
         top: position.y - offsetY,
       }}
     >
-      <div className="flex flex-col gap-0.5 opacity-80">
+      <div className="flex flex-col gap-px opacity-80">
         {grid.map((row, y) => (
-          <div key={y} className="flex gap-0.5">
+          <div key={y} className="flex gap-px">
             {row.map((filled, x) => (
               <div
                 key={x}
