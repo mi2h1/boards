@@ -221,7 +221,7 @@ export const GamePlayPhase = ({
         {/* 2カラムレイアウト */}
         <div className="flex gap-4 items-start">
           {/* 左カラム: 他プレイヤー情報 */}
-          <div className="w-56 flex-shrink-0">
+          <div className="w-64 flex-shrink-0">
             <div className="bg-slate-800/50 rounded-lg p-3">
               <h3 className="text-white font-bold text-sm mb-3">他プレイヤー</h3>
               {otherPlayers.length > 0 ? (
@@ -291,12 +291,12 @@ export const GamePlayPhase = ({
         </div>
 
         {/* 下部エリア */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
 
-          {/* 所持パズル */}
-          <div className="bg-slate-800/50 rounded-lg p-4">
+          {/* 所持パズル（4枚並ぶ幅を確保） */}
+          <div className="bg-slate-800/50 rounded-lg p-4 flex-shrink-0">
             <h2 className="text-white font-bold mb-3">所持パズル（{workingPuzzles.length}/4）</h2>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2">
               {workingPuzzles.map((wp) => (
                 <DroppablePuzzleCard
                   key={wp.cardId}
@@ -327,7 +327,7 @@ export const GamePlayPhase = ({
           </div>
 
           {/* 右: 手持ちピース */}
-          <div className="bg-slate-800/50 rounded-lg p-4">
+          <div className="bg-slate-800/50 rounded-lg p-4 flex-1 min-w-0">
             <h2 className="text-white font-bold mb-3">手持ちピース（{currentPlayer.pieces.length}）</h2>
 
             {/* 選択中のピースのコントロール */}
