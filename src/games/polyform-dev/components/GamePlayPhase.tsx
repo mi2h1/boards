@@ -11,14 +11,14 @@ interface GamePlayPhaseProps {
   gameState: GameState;
   currentPlayerId: string;
   onLeaveRoom: () => void;
-  onUpdatePlayer?: (updates: Partial<GameState['players'][0]>) => void;
+  onUpdateGameState?: (updates: Partial<GameState>) => void;
 }
 
 export const GamePlayPhase = ({
   gameState,
   currentPlayerId,
   onLeaveRoom,
-  onUpdatePlayer,
+  onUpdateGameState,
 }: GamePlayPhaseProps) => {
   // 選択状態
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
@@ -60,6 +60,66 @@ export const GamePlayPhase = ({
 
   // 選択中のピース
   const selectedPiece = currentPlayer.pieces.find((p) => p.id === selectedPieceId);
+
+  // パズルを場から取得
+  const handleTakePuzzle = (puzzleId: string, puzzleType: 'white' | 'black') => {
+    if (!onUpdateGameState) return;
+
+    // 所持パズルが4枚以上なら取得不可
+    if (currentPlayer.workingPuzzles.length >= 4) {
+      console.log('所持パズルが上限です');
+      return;
+    }
+
+    // マーケットと山札を取得
+    const market = puzzleType === 'white' ? [...gameState.whitePuzzleMarket] : [...gameState.blackPuzzleMarket];
+    const deck = puzzleType === 'white' ? [...gameState.whitePuzzleDeck] : [...gameState.blackPuzzleDeck];
+
+    // マーケットからパズルを削除
+    const puzzleIndex = market.indexOf(puzzleId);
+    if (puzzleIndex === -1) return;
+    market.splice(puzzleIndex, 1);
+
+    // 山札から補充（あれば）
+    if (deck.length > 0) {
+      const newPuzzle = deck.shift();
+      if (newPuzzle) {
+        market.push(newPuzzle);
+      }
+    }
+
+    // プレイヤーの所持パズルに追加
+    const newWorkingPuzzle: WorkingPuzzle = {
+      cardId: puzzleId,
+      placedPieces: [],
+    };
+
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === currentPlayerId) {
+        return {
+          ...p,
+          workingPuzzles: [...p.workingPuzzles, newWorkingPuzzle],
+        };
+      }
+      return p;
+    });
+
+    // ゲーム状態を更新
+    const updates: Partial<GameState> = {
+      players: updatedPlayers,
+    };
+
+    if (puzzleType === 'white') {
+      updates.whitePuzzleMarket = market;
+      updates.whitePuzzleDeck = deck;
+    } else {
+      updates.blackPuzzleMarket = market;
+      updates.blackPuzzleDeck = deck;
+    }
+
+    onUpdateGameState(updates);
+    console.log('パズル取得:', { puzzleId, puzzleType });
+  };
 
   // マウス移動の追跡
   useEffect(() => {
@@ -164,12 +224,19 @@ export const GamePlayPhase = ({
     setFlipped(false);
     setIsDragging(false);
 
-    // 親に通知
-    if (onUpdatePlayer) {
-      onUpdatePlayer({
-        pieces: updatedPieces,
-        workingPuzzles: updatedWorkingPuzzles,
+    // Firebaseに同期
+    if (onUpdateGameState) {
+      const updatedPlayers = gameState.players.map((p) => {
+        if (p.id === currentPlayerId) {
+          return {
+            ...p,
+            pieces: updatedPieces,
+            workingPuzzles: updatedWorkingPuzzles,
+          };
+        }
+        return p;
       });
+      onUpdateGameState({ players: updatedPlayers });
     }
 
     console.log('ピース配置:', { puzzleId, position, piece: selectedPiece.type });
@@ -253,7 +320,12 @@ export const GamePlayPhase = ({
           <div className="mb-3">
             <div className="flex gap-2 items-start">
               {whitePuzzles.map((card) => (
-                <PuzzleCardDisplay key={card.id} card={card} size="sm" />
+                <PuzzleCardDisplay
+                  key={card.id}
+                  card={card}
+                  size="sm"
+                  onClick={() => handleTakePuzzle(card.id, 'white')}
+                />
               ))}
               {/* 山札（重なったカード風） */}
               <div className="relative w-[140px] h-[175px] flex-shrink-0">
@@ -273,7 +345,12 @@ export const GamePlayPhase = ({
           <div>
             <div className="flex gap-2 items-start">
               {blackPuzzles.map((card) => (
-                <PuzzleCardDisplay key={card.id} card={card} size="sm" />
+                <PuzzleCardDisplay
+                  key={card.id}
+                  card={card}
+                  size="sm"
+                  onClick={() => handleTakePuzzle(card.id, 'black')}
+                />
               ))}
               {/* 山札（重なったカード風） */}
               <div className="relative w-[140px] h-[175px] flex-shrink-0">
