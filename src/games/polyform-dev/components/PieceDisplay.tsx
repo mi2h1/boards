@@ -5,7 +5,7 @@ interface PieceDisplayProps {
   type: PieceType;
   rotation?: 0 | 90 | 180 | 270;
   flipped?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   onClick?: () => void;
   selected?: boolean;
   disabled?: boolean;
@@ -78,6 +78,7 @@ export const PieceDisplay = ({
 
   // セルサイズ
   const cellSize = {
+    xs: 'w-2 h-2',
     sm: 'w-3 h-3',
     md: 'w-5 h-5',
     lg: 'w-7 h-7',

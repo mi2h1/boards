@@ -295,28 +295,74 @@ export const GamePlayPhase = ({
           {/* 左カラム: 他プレイヤー情報 */}
           <div className="w-80 flex-shrink-0">
             <div className="bg-slate-800/50 rounded-lg p-3">
-              <h3 className="text-white font-bold text-sm mb-3">他プレイヤー</h3>
+              <h3 className="text-white font-bold text-sm mb-3">プレイヤー</h3>
               {/* デバッグ: 自分の情報も表示 */}
               <div className="space-y-3">
                 <div className="bg-teal-700/50 rounded-lg p-2 border border-teal-500/50">
-                  <div className="text-white text-sm font-medium truncate">{currentPlayer.name} (自分)</div>
-                  <div className="text-white/60 text-xs mt-1">{currentPlayer.score}pt</div>
-                  <div className="text-white/40 text-xs">
-                    パズル: {currentPlayer.workingPuzzles.length}/4
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-white text-sm font-medium truncate">{currentPlayer.name}</div>
+                    <div className="text-white/60 text-xs">{currentPlayer.score}pt</div>
                   </div>
-                  <div className="text-white/40 text-xs">
-                    ピース: {currentPlayer.pieces.length}
+                  {/* 所持パズル */}
+                  <div className="flex gap-1 mb-2">
+                    {currentPlayer.workingPuzzles.map((wp) => {
+                      const card = ALL_PUZZLES.find((p) => p.id === wp.cardId);
+                      return (
+                        <div
+                          key={wp.cardId}
+                          className={`w-6 h-8 rounded text-[8px] flex items-center justify-center font-bold ${
+                            card?.type === 'white'
+                              ? 'bg-slate-200 text-slate-700'
+                              : 'bg-slate-700 text-white'
+                          }`}
+                        >
+                          {card?.points}
+                        </div>
+                      );
+                    })}
+                    {Array(4 - currentPlayer.workingPuzzles.length).fill(null).map((_, i) => (
+                      <div key={`empty-${i}`} className="w-6 h-8 rounded border border-dashed border-slate-500" />
+                    ))}
+                  </div>
+                  {/* 所持ピース */}
+                  <div className="flex flex-wrap gap-0.5">
+                    {currentPlayer.pieces.map((piece) => (
+                      <PieceDisplay key={piece.id} type={piece.type} size="xs" />
+                    ))}
                   </div>
                 </div>
                 {otherPlayers.map((player) => (
                   <div key={player.id} className="bg-slate-700/50 rounded-lg p-2">
-                    <div className="text-white text-sm font-medium truncate">{player.name}</div>
-                    <div className="text-white/60 text-xs mt-1">{player.score}pt</div>
-                    <div className="text-white/40 text-xs">
-                      パズル: {player.workingPuzzles.length}/4
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-white text-sm font-medium truncate">{player.name}</div>
+                      <div className="text-white/60 text-xs">{player.score}pt</div>
                     </div>
-                    <div className="text-white/40 text-xs">
-                      ピース: {player.pieces.length}
+                    {/* 所持パズル */}
+                    <div className="flex gap-1 mb-2">
+                      {player.workingPuzzles.map((wp) => {
+                        const card = ALL_PUZZLES.find((p) => p.id === wp.cardId);
+                        return (
+                          <div
+                            key={wp.cardId}
+                            className={`w-6 h-8 rounded text-[8px] flex items-center justify-center font-bold ${
+                              card?.type === 'white'
+                                ? 'bg-slate-200 text-slate-700'
+                                : 'bg-slate-700 text-white'
+                            }`}
+                          >
+                            {card?.points}
+                          </div>
+                        );
+                      })}
+                      {Array(4 - player.workingPuzzles.length).fill(null).map((_, i) => (
+                        <div key={`empty-${i}`} className="w-6 h-8 rounded border border-dashed border-slate-500" />
+                      ))}
+                    </div>
+                    {/* 所持ピース */}
+                    <div className="flex flex-wrap gap-0.5">
+                      {player.pieces.map((piece) => (
+                        <PieceDisplay key={piece.id} type={piece.type} size="xs" />
+                      ))}
                     </div>
                   </div>
                 ))}
