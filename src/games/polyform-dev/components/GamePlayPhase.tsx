@@ -514,26 +514,28 @@ export const GamePlayPhase = ({
           {/* 右カラム: メインコンテンツ */}
           <div className="flex-1 min-w-0">
             {/* インフォボード */}
-            <div className="bg-slate-800/50 rounded-lg p-3 mb-4 flex items-center justify-between">
-              <div className="text-white">
+            <div className="bg-slate-800/50 rounded-lg p-3 mb-4 text-center">
+              <div className="text-white mb-1">
                 <span className="text-white/60 text-sm">現在のターン：</span>
                 <span className="font-bold ml-1">
                   {gameState.players[gameState.currentPlayerIndex]?.name}
                 </span>
               </div>
-              <AnimatePresence mode="wait">
-                {announcement && (
-                  <motion.div
-                    key={announcement}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="bg-teal-600 text-white px-3 py-1 rounded-full text-sm font-medium"
-                  >
-                    {announcement}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className="h-7 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {announcement && (
+                    <motion.div
+                      key={announcement}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="bg-teal-600 text-white px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {announcement}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* 場のパズル（横長エリア） */}
