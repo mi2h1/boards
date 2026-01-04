@@ -1640,7 +1640,8 @@ export const GamePlayPhase = ({
             {selectedPiece && !levelChangeMode && (
               <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
                 <div className="text-white/60 text-sm mb-2">
-                  Lv.{PIECE_DEFINITIONS[selectedPiece.type].level} ドラッグして配置
+                  Lv.{PIECE_DEFINITIONS[selectedPiece.type].level}
+                  {actionMode === 'levelChange' ? ' UP/DOWNでレベル変更' : ' ドラッグして配置'}
                 </div>
                 <div className="flex items-center justify-between">
                   <PieceDisplay
@@ -1650,37 +1651,47 @@ export const GamePlayPhase = ({
                     size={toPieceSize(cardSize)}
                   />
                   <div className="flex gap-2">
-                    <button
-                      onClick={handleRotate}
-                      className="p-2 bg-slate-600 hover:bg-slate-500 rounded text-white"
-                      title="回転"
-                    >
-                      <RotateCw className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={handleFlip}
-                      className={`p-2 rounded text-white ${
-                        flipped ? 'bg-teal-600' : 'bg-slate-600 hover:bg-slate-500'
-                      }`}
-                      title="反転"
-                    >
-                      <FlipHorizontal className="w-5 h-5" />
-                    </button>
-                    {PIECE_DEFINITIONS[selectedPiece.type].level < 4 && (
-                      <button
-                        onClick={handleStartLevelUp}
-                        className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-white text-xs"
-                      >
-                        UP
-                      </button>
+                    {/* 回転・反転ボタン：ピース配置モードまたはマスターアクション中のみ表示 */}
+                    {(actionMode === 'placePiece' || masterActionMode) && (
+                      <>
+                        <button
+                          onClick={handleRotate}
+                          className="p-2 bg-slate-600 hover:bg-slate-500 rounded text-white"
+                          title="回転"
+                        >
+                          <RotateCw className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={handleFlip}
+                          className={`p-2 rounded text-white ${
+                            flipped ? 'bg-teal-600' : 'bg-slate-600 hover:bg-slate-500'
+                          }`}
+                          title="反転"
+                        >
+                          <FlipHorizontal className="w-5 h-5" />
+                        </button>
+                      </>
                     )}
-                    {PIECE_DEFINITIONS[selectedPiece.type].level > 1 && (
-                      <button
-                        onClick={handleStartLevelDown}
-                        className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs"
-                      >
-                        DOWN
-                      </button>
+                    {/* UP/DOWNボタン：レベル変更モードのみ表示 */}
+                    {actionMode === 'levelChange' && (
+                      <>
+                        {PIECE_DEFINITIONS[selectedPiece.type].level < 4 && (
+                          <button
+                            onClick={handleStartLevelUp}
+                            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-white text-xs"
+                          >
+                            UP
+                          </button>
+                        )}
+                        {PIECE_DEFINITIONS[selectedPiece.type].level > 1 && (
+                          <button
+                            onClick={handleStartLevelDown}
+                            className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs"
+                          >
+                            DOWN
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
