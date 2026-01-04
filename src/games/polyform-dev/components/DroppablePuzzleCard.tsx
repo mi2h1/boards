@@ -233,10 +233,10 @@ export const DroppablePuzzleCard = ({
                 return (
                   <div
                     key={x}
-                    className={`${cellSize} rounded-sm border-2 ${
+                    className={`${cellSize} rounded-sm ${
                       isValidHover
-                        ? `${previewColor} opacity-50 border-white`
-                        : 'bg-red-500/30 border-red-500'
+                        ? `${previewColor} opacity-70 border border-white/50 shadow-sm`
+                        : 'bg-red-500/50 border border-red-400'
                     }`}
                   />
                 );
