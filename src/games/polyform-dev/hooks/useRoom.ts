@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ref, set, onValue, off, update, remove, get, onDisconnect } from 'firebase/database';
 import { db } from '../../../lib/firebase';
-import type { GameState, Player, GameSettings, PieceInstance } from '../types/game';
+import type { GameState, Player, GameSettings, PieceInstance, WorkingPuzzle, PlacedPiece } from '../types/game';
 import { INITIAL_PIECE_STOCK } from '../data/pieces';
 import { WHITE_PUZZLES, BLACK_PUZZLES } from '../data/puzzles';
 
-// Firebaseパス（開発版）
-const FIREBASE_PATH = 'polyform-rooms-dev';
+// Firebaseパス（開発用）
+const FIREBASE_PATH = 'polyform-dev-rooms';
 
 // ルームデータ
 export interface RoomData {
@@ -263,11 +263,23 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
       if (data) {
         const gs = data.gameState;
 
+        // プレイヤーデータの正規化（ネストした配列も含む）
+        const rawPlayers = normalizeArray<Player>(gs?.players);
+        const normalizedPlayers = rawPlayers.map((p): Player => ({
+          ...p,
+          pieces: normalizeArray<PieceInstance>(p.pieces),
+          workingPuzzles: normalizeArray<WorkingPuzzle>(p.workingPuzzles).map((wp): WorkingPuzzle => ({
+            ...wp,
+            placedPieces: normalizeArray<PlacedPiece>(wp.placedPieces),
+          })),
+          completedPuzzleIds: normalizeArray<string>(p.completedPuzzleIds),
+        }));
+
         const normalizedData: RoomData = {
           ...data,
           gameState: {
             ...gs,
-            players: normalizeArray<Player>(gs?.players),
+            players: normalizedPlayers,
             playerOrder: normalizeArray<string>(gs?.playerOrder),
             whitePuzzleDeck: normalizeArray<string>(gs?.whitePuzzleDeck),
             blackPuzzleDeck: normalizeArray<string>(gs?.blackPuzzleDeck),
