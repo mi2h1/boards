@@ -63,7 +63,12 @@ export const GamePlayPhase = ({
 
   // パズルを場から取得
   const handleTakePuzzle = (puzzleId: string, puzzleType: 'white' | 'black') => {
-    if (!onUpdateGameState) return;
+    console.log('handleTakePuzzle called:', { puzzleId, puzzleType, hasCallback: !!onUpdateGameState });
+
+    if (!onUpdateGameState) {
+      console.log('onUpdateGameState is undefined');
+      return;
+    }
 
     // 所持パズルが4枚以上なら取得不可
     if (currentPlayer.workingPuzzles.length >= 4) {
