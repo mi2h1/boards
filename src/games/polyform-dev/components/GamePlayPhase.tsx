@@ -1196,7 +1196,7 @@ export const GamePlayPhase = ({
       <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
         <div className="min-h-screen bg-black/20 p-4 flex flex-col items-center">
           {/* タイトル */}
-          <div className="text-center my-6">
+          <div className="text-center my-6 mb-10">
             <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-8 mx-auto mb-2" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white">結果発表</h1>
           </div>
@@ -1205,12 +1205,33 @@ export const GamePlayPhase = ({
           <div className="w-full max-w-5xl space-y-3 mb-6">
             {gameState.players.map((player) => {
               const result = playerResults.find((r) => r.player.id === player.id);
+              // 順位を計算
+              const rank = playerResults.findIndex((r) => r.player.id === player.id) + 1;
               const completedPuzzles = player.completedPuzzles || [];
 
               return (
                 <div key={player.id} className="bg-slate-800/60 rounded-lg p-3">
                   {/* プレイヤー名とスコア（左上） */}
                   <div className="flex items-center gap-3 mb-2">
+                    <AnimatePresence>
+                      {showFinalResults && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm ${
+                            rank === 1
+                              ? 'bg-yellow-400 text-yellow-900'
+                              : rank === 2
+                              ? 'bg-slate-300 text-slate-700'
+                              : rank === 3
+                              ? 'bg-amber-600 text-amber-100'
+                              : 'bg-slate-600 text-slate-300'
+                          }`}
+                        >
+                          {rank}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     <div className="text-white font-bold">{player.name}</div>
                     <AnimatePresence>
                       {showFinalResults && result && (
@@ -1231,7 +1252,7 @@ export const GamePlayPhase = ({
                   </div>
 
                   {/* 完成パズル一覧（横並び） */}
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-3">
                     {completedPuzzles.length === 0 ? (
                       <div className="text-slate-500 text-xs py-2">完成なし</div>
                     ) : (
