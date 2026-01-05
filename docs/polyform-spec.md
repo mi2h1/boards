@@ -436,16 +436,7 @@ interface GameState {
 
 ---
 
-## 11. URL
-
-| 環境 | URL |
-|------|-----|
-| 本番 | https://mi2h1.github.io/boards/polyform |
-| 開発 | https://mi2h1.github.io/boards/polyform-dev |
-
----
-
-## 12. 今後の拡張案
+## 11. 今後の拡張案
 
 - [ ] 観戦モード
 - [ ] AI対戦
