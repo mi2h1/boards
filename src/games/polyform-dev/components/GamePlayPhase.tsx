@@ -40,6 +40,7 @@ interface GamePlayPhaseProps {
   currentPlayerId: string;
   onLeaveRoom: () => void;
   onUpdateGameState?: (updates: Partial<GameState>) => void;
+  isTransitioning?: boolean;
 }
 
 export const GamePlayPhase = ({
@@ -47,6 +48,7 @@ export const GamePlayPhase = ({
   currentPlayerId,
   onLeaveRoom,
   onUpdateGameState,
+  isTransitioning = false,
 }: GamePlayPhaseProps) => {
   // 選択状態
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
@@ -135,19 +137,23 @@ export const GamePlayPhase = ({
   }, []);
 
   // ゲーム開始時のカード配布アニメーション
+  // トランジション完了後に開始
   useEffect(() => {
+    // トランジション中は何もしない
+    if (isTransitioning) return;
+
     // フェードイン開始
     const fadeTimer = setTimeout(() => {
       setGameStarted(true);
     }, 100);
 
-    // カード配布（1秒後から開始、0.3秒間隔で1枚ずつ）
+    // カード配布（0.5秒後から開始、0.3秒間隔で1枚ずつ）
     const dealTimers: ReturnType<typeof setTimeout>[] = [];
     for (let i = 0; i < 4; i++) {
       dealTimers.push(
         setTimeout(() => {
           setDealtCardCount(i + 1);
-        }, 1000 + i * 300)
+        }, 500 + i * 300)
       );
     }
 
@@ -155,7 +161,7 @@ export const GamePlayPhase = ({
       clearTimeout(fadeTimer);
       dealTimers.forEach(clearTimeout);
     };
-  }, []);
+  }, [isTransitioning]);
 
   // アニメーション用のRef
   const workingPuzzleSlotRefs = useRef<(HTMLDivElement | null)[]>([]);

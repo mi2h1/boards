@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Heart, FlaskConical } from 'lucide-react';
 import { Card } from './Card';
+import { CardReference } from './CardReference';
 import type { GameState, Player, Card as CardType } from '../types/game';
 
 interface GamePlayPhaseProps {
@@ -87,7 +88,14 @@ export const GamePlayPhase = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 p-4 pb-44 md:pb-4">
-      <div className="max-w-5xl mx-auto">
+      <div className="flex gap-4 max-w-7xl mx-auto">
+        {/* 左カラム: カード一覧（PC専用） */}
+        <div className="hidden lg:block w-44 flex-shrink-0">
+          <CardReference />
+        </div>
+
+        {/* 右カラム: 既存コンテンツ */}
+        <div className="flex-1 max-w-5xl">
         {/* ヘッダー */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -343,6 +351,8 @@ export const GamePlayPhase = ({
             </div>
           </div>
         )}
+        </div>
+        {/* 右カラム終わり */}
       </div>
 
       {/* スマホ用: 下部固定の入力パネル */}

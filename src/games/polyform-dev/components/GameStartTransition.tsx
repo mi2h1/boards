@@ -9,13 +9,13 @@ export const GameStartTransition = ({ onComplete }: GameStartTransitionProps) =>
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // ローディング表示後、自動でフェードアウト
+    // ローディング表示後、自動でフェードアウト（1秒表示）
     const timer = setTimeout(() => {
       setFadeOut(true);
       setTimeout(() => {
         onComplete();
       }, 300);
-    }, 1500);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);

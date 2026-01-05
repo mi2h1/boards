@@ -38,19 +38,31 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
   const [showTransition, setShowTransition] = useState(false);
   const [isStartingGame, setIsStartingGame] = useState(false);
   const prevPhaseRef = useRef<string | null>(null);
+  const hasCompletedTransitionRef = useRef(false);
 
   const gameState = roomData?.gameState;
   const players = gameState?.players ?? [];
   const phase = gameState?.phase ?? 'waiting';
 
-  // フェーズ変更を監視（他プレイヤー用）
+  // フェーズが waiting に戻ったらトランジション完了フラグをリセット
   useEffect(() => {
-    // 他プレイヤーが waiting → playing の遷移を検知した時
-    if (prevPhaseRef.current === 'waiting' && phase === 'playing' && !showTransition) {
-      setShowTransition(true);
+    if (phase === 'waiting') {
+      hasCompletedTransitionRef.current = false;
     }
     prevPhaseRef.current = phase;
-  }, [phase, showTransition]);
+  }, [phase]);
+
+  // トランジションを表示すべきかの計算
+  // - 明示的にshowTransitionがtrue（ホストがゲーム開始時）
+  // - または、フェーズがplayingでまだトランジション完了していない（非ホスト用）
+  const shouldShowTransition = showTransition || (phase === 'playing' && !hasCompletedTransitionRef.current);
+
+  // トランジション完了時のハンドラ
+  const handleTransitionComplete = () => {
+    hasCompletedTransitionRef.current = true;
+    setShowTransition(false);
+    setIsStartingGame(false);
+  };
 
   // ゲーム開始処理（トランジション付き）
   const handleStartGame = () => {
@@ -71,19 +83,15 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
     return (
       <>
         {/* ゲーム開始トランジション */}
-        {showTransition && (
-          <GameStartTransition
-            onComplete={() => {
-              setShowTransition(false);
-              setIsStartingGame(false);
-            }}
-          />
+        {shouldShowTransition && (
+          <GameStartTransition onComplete={handleTransitionComplete} />
         )}
         <GamePlayPhase
           gameState={gameState}
           currentPlayerId={playerId}
           onLeaveRoom={leaveRoom}
           onUpdateGameState={updateGameState}
+          isTransitioning={shouldShowTransition}
         />
       </>
     );
@@ -93,13 +101,8 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
   return (
     <>
       {/* ゲーム開始トランジション（ロビーの上に表示） */}
-      {showTransition && (
-        <GameStartTransition
-          onComplete={() => {
-            setShowTransition(false);
-            setIsStartingGame(false);
-          }}
-        />
+      {shouldShowTransition && (
+        <GameStartTransition onComplete={handleTransitionComplete} />
       )}
       <Lobby
         roomCode={roomCode}
