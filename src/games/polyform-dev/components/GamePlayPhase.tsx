@@ -2101,56 +2101,58 @@ export const GamePlayPhase = ({
               ) : (
                 /* 通常フェーズ用のUI */
                 <>
-              {/* インフォパネル（3段構成・高さ固定） */}
-              <div className="flex flex-col gap-1 mb-3 h-24">
-                {/* 1段目: ラウンド｜ターン */}
-                <div className="flex items-center justify-center gap-2 h-7">
-                  <span className="text-slate-400 text-sm">
-                    ラウンド {gameState.currentTurnNumber}
-                  </span>
-                  {gameState.finalRound && (
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                      gameState.finalRoundTurnNumber !== null && gameState.currentTurnNumber > gameState.finalRoundTurnNumber
-                        ? 'bg-red-600 text-white'
-                        : 'bg-yellow-600 text-white'
-                    }`}>
-                      {gameState.finalRoundTurnNumber !== null && gameState.currentTurnNumber > gameState.finalRoundTurnNumber
-                        ? '最終ラウンド！'
-                        : '次が最終ラウンド！'}
+              {/* インフォパネル（2カラム：左にターン情報、右にピース一覧） */}
+              <div className="flex gap-4 mb-3 h-24">
+                {/* 左カラム：ターン情報（3段） */}
+                <div className="flex-1 flex flex-col gap-1">
+                  {/* 1段目: ラウンド｜ターン */}
+                  <div className="flex items-center justify-center gap-2 h-7">
+                    <span className="text-slate-400 text-sm">
+                      ラウンド {gameState.currentTurnNumber}
                     </span>
-                  )}
-                  <span className="text-slate-600">|</span>
-                  <span className={`text-sm font-medium ${isMyTurn ? 'text-teal-400' : 'text-slate-400'}`}>
-                    {isMyTurn ? 'あなたのターン' : `${gameState.players.find(p => p.id === activePlayerId)?.name}のターン`}
-                  </span>
-                </div>
-
-                {/* 2段目: 残りアクション＋アナウンス */}
-                <div className="flex items-center justify-center gap-3 h-7">
-                  <span className="text-slate-500 text-sm">
-                    残りアクション: <span className={`font-bold ${
-                      gameState.players.find(p => p.id === activePlayerId)?.remainingActions === 0 ? 'text-slate-500' : 'text-white'
-                    }`}>{gameState.players.find(p => p.id === activePlayerId)?.remainingActions ?? 0}</span>
-                  </span>
-                  <AnimatePresence mode="wait">
-                    {announcement && (
-                      <motion.div
-                        key={announcement}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className={`px-3 py-0.5 rounded-full text-sm font-medium ${
-                          isMyTurn ? 'bg-teal-600 text-white' : 'bg-amber-600 text-white'
-                        }`}
-                      >
-                        {announcement}
-                      </motion.div>
+                    {gameState.finalRound && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                        gameState.finalRoundTurnNumber !== null && gameState.currentTurnNumber > gameState.finalRoundTurnNumber
+                          ? 'bg-red-600 text-white'
+                          : 'bg-yellow-600 text-white'
+                      }`}>
+                        {gameState.finalRoundTurnNumber !== null && gameState.currentTurnNumber > gameState.finalRoundTurnNumber
+                          ? '最終ラウンド！'
+                          : '次が最終ラウンド！'}
+                      </span>
                     )}
-                  </AnimatePresence>
-                </div>
+                    <span className="text-slate-600">|</span>
+                    <span className={`text-sm font-medium ${isMyTurn ? 'text-teal-400' : 'text-slate-400'}`}>
+                      {isMyTurn ? 'あなたのターン' : `${gameState.players.find(p => p.id === activePlayerId)?.name}のターン`}
+                    </span>
+                  </div>
 
-                {/* 3段目: ボタン群 */}
-                <div className="flex items-center justify-center gap-2 h-8">
+                  {/* 2段目: 残りアクション＋アナウンス */}
+                  <div className="flex items-center justify-center gap-3 h-7">
+                    <span className="text-slate-500 text-sm">
+                      残りアクション: <span className={`font-bold ${
+                        gameState.players.find(p => p.id === activePlayerId)?.remainingActions === 0 ? 'text-slate-500' : 'text-white'
+                      }`}>{gameState.players.find(p => p.id === activePlayerId)?.remainingActions ?? 0}</span>
+                    </span>
+                    <AnimatePresence mode="wait">
+                      {announcement && (
+                        <motion.div
+                          key={announcement}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          className={`px-3 py-0.5 rounded-full text-sm font-medium ${
+                            isMyTurn ? 'bg-teal-600 text-white' : 'bg-amber-600 text-white'
+                          }`}
+                        >
+                          {announcement}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* 3段目: ボタン群 */}
+                  <div className="flex items-center justify-center gap-2 h-8">
                   {/* 自分のターン＆アクション残り＆マスターでない */}
                   {isMyTurn && currentPlayer.remainingActions > 0 && !masterActionMode && (
                     <>
@@ -2280,6 +2282,30 @@ export const GamePlayPhase = ({
                   {!isMyTurn && !masterActionMode && (
                     <span className="text-slate-500 text-sm">相手のアクションを待っています...</span>
                   )}
+                  </div>
+                </div>
+
+                {/* 右カラム：ピースストック一覧 */}
+                <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-2 flex items-center">
+                  <div className="flex gap-4">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div key={level} className="flex flex-col items-center gap-0.5">
+                        <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
+                        <div className="flex gap-1">
+                          {PIECES_BY_LEVEL[level].map((type) => (
+                            <div key={type} className="flex flex-col items-center">
+                              <PieceDisplay type={type} size="xs" />
+                              <span className={`text-xs leading-tight ${
+                                gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
+                              }`}>
+                                {gameState.pieceStock[type]}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
                 </>
@@ -2430,29 +2456,6 @@ export const GamePlayPhase = ({
               })()}
             </div>
           </div>
-              </div>
-            </div>
-
-            {/* ピースストック一覧（横長全幅） */}
-            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-3 mb-4">
-              <div className="flex justify-center gap-6">
-                {[1, 2, 3, 4].map((level) => (
-                  <div key={level} className="flex flex-col items-center gap-1">
-                    <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
-                    <div className="flex gap-1.5">
-                      {PIECES_BY_LEVEL[level].map((type) => (
-                        <div key={type} className="flex flex-col items-center gap-0.5">
-                          <PieceDisplay type={type} size="xs" />
-                          <span className={`text-xs ${
-                            gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
-                          }`}>
-                            {gameState.pieceStock[type]}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
 
