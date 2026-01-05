@@ -81,13 +81,13 @@ export const PuzzleCardDisplay = ({
       <div className="flex items-center justify-between h-6 mb-2">
         {/* ポイント */}
         <div
-          className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+          className={`text-xs font-bold ${
             card.type === 'white'
-              ? 'bg-slate-700 text-white'
-              : 'bg-yellow-500 text-black'
+              ? 'text-slate-700'
+              : 'text-yellow-500'
           }`}
         >
-          {card.points}pt
+          {card.points}
         </div>
 
         {/* 報酬ピース */}
