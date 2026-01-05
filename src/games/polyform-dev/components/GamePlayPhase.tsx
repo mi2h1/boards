@@ -110,6 +110,10 @@ export const GamePlayPhase = ({
   const [gameStarted, setGameStarted] = useState(false);
   const [dealtCardCount, setDealtCardCount] = useState(0);
 
+  // 結果画面用：パズルオープン演出
+  const [revealedCardIndex, setRevealedCardIndex] = useState(-1);
+  const [showFinalResults, setShowFinalResults] = useState(false);
+
   // デバッグ用：操作対象プレイヤー（他プレイヤーの操作を可能にする）
   const [debugControlPlayerId, setDebugControlPlayerId] = useState<string>(currentPlayerId);
 
@@ -213,11 +217,17 @@ export const GamePlayPhase = ({
 
       const updatedPlayers = gameState.players.map((p) => {
         if (p.id === debugControlPlayerId) {
+          // 完成パズルを配置情報付きで保存
+          const newCompletedPuzzle = completedPuzzle
+            ? { cardId: puzzleId, placedPieces: [...completedPuzzle.placedPieces] }
+            : { cardId: puzzleId, placedPieces: [] };
+
           return {
             ...p,
             score: p.score + points,
             pieces: updatedPieces,
             workingPuzzles: p.workingPuzzles.filter((wp) => wp.cardId !== puzzleId),
+            completedPuzzles: [...(p.completedPuzzles || []), newCompletedPuzzle],
             completedWhite: puzzleType === 'white' ? (p.completedWhite || 0) + 1 : (p.completedWhite || 0),
             completedBlack: puzzleType === 'black' ? (p.completedBlack || 0) + 1 : (p.completedBlack || 0),
           };
@@ -1150,6 +1160,11 @@ export const GamePlayPhase = ({
 
   // 結果画面（ended フェーズ）
   if (gameState.phase === 'ended') {
+    // 全プレイヤーの完成パズル数の最大値
+    const maxCompletedPuzzles = Math.max(
+      ...gameState.players.map((p) => (p.completedPuzzles || []).length)
+    );
+
     // 全プレイヤーのスコアを計算してソート
     const playerResults = gameState.players
       .map((player) => ({
@@ -1158,74 +1173,177 @@ export const GamePlayPhase = ({
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
 
+    // パズルオープン演出用のuseEffect（結果画面専用）
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      if (revealedCardIndex < maxCompletedPuzzles) {
+        const timer = setTimeout(() => {
+          setRevealedCardIndex((prev) => prev + 1);
+        }, 1200); // 1.2秒ごとにオープン
+        return () => clearTimeout(timer);
+      } else if (!showFinalResults && revealedCardIndex >= maxCompletedPuzzles) {
+        // 全てオープン後、少し待って結果表示
+        const timer = setTimeout(() => {
+          setShowFinalResults(true);
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    }, [revealedCardIndex, maxCompletedPuzzles, showFinalResults]);
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
-        <div className="min-h-screen bg-black/20 p-4 flex flex-col items-center justify-center">
+        <div className="min-h-screen bg-black/20 p-4 flex flex-col items-center">
           {/* タイトル */}
-          <div className="text-center mb-8">
-            <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-10 mx-auto mb-4" style={{ filter: 'brightness(0) invert(1)' }} />
-            <h1 className="text-3xl font-bold text-white mb-2">ゲーム終了</h1>
+          <div className="text-center my-6">
+            <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-8 mx-auto mb-2" style={{ filter: 'brightness(0) invert(1)' }} />
+            <h1 className="text-2xl font-bold text-white">結果発表</h1>
           </div>
 
-          {/* 結果テーブル */}
-          <div className="bg-slate-800/80 rounded-xl p-6 max-w-2xl w-full">
-            <h2 className="text-xl font-bold text-white mb-4 text-center">結果発表</h2>
-            <div className="space-y-3">
-              {playerResults.map((result, index) => (
-                <div
-                  key={result.player.id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    index === 0
-                      ? 'bg-amber-600/30 border-2 border-amber-400'
-                      : 'bg-slate-700/50 border border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    {/* 順位 */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                      index === 0
-                        ? 'bg-amber-400 text-amber-900'
-                        : index === 1
-                          ? 'bg-slate-300 text-slate-700'
-                          : index === 2
-                            ? 'bg-amber-700 text-amber-100'
-                            : 'bg-slate-600 text-slate-300'
-                    }`}>
-                      {index + 1}
+          {/* 各プレイヤーの完成パズル表示 */}
+          <div className="w-full max-w-6xl mb-6">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${gameState.players.length}, 1fr)` }}>
+              {gameState.players.map((player) => {
+                const result = playerResults.find((r) => r.player.id === player.id);
+                const completedPuzzles = player.completedPuzzles || [];
+
+                return (
+                  <div key={player.id} className="bg-slate-800/60 rounded-lg p-3">
+                    {/* プレイヤー名とスコア */}
+                    <div className="text-center mb-3">
+                      <div className="text-white font-bold text-sm">{player.name}</div>
+                      <AnimatePresence>
+                        {showFinalResults && result && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-amber-300 font-bold text-lg"
+                          >
+                            {result.finalScore}pt
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    {/* プレイヤー名 */}
-                    <div>
-                      <div className="text-white font-bold">{result.player.name}</div>
-                      <div className="text-slate-400 text-xs">
-                        完成: {result.player.completedWhite || 0}白 / {result.player.completedBlack || 0}黒
-                      </div>
+
+                    {/* 完成パズル一覧 */}
+                    <div className="flex flex-col items-center gap-2">
+                      {completedPuzzles.length === 0 ? (
+                        <div className="text-slate-500 text-xs">完成なし</div>
+                      ) : (
+                        completedPuzzles.map((cp, cardIndex) => {
+                          const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
+                          if (!card) return null;
+
+                          const isRevealed = cardIndex <= revealedCardIndex;
+
+                          return (
+                            <motion.div
+                              key={cp.cardId}
+                              initial={{ rotateY: 180 }}
+                              animate={{ rotateY: isRevealed ? 0 : 180 }}
+                              transition={{ duration: 0.6, ease: 'easeOut' }}
+                              style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+                            >
+                              {isRevealed ? (
+                                <div className="relative">
+                                  <PuzzleCardDisplay
+                                    card={card}
+                                    size="xs"
+                                    placedPieces={cp.placedPieces}
+                                  />
+                                  <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                                    +{card.points}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`rounded border-2 flex items-center justify-center ${
+                                    card.type === 'white'
+                                      ? 'bg-slate-200 border-slate-300'
+                                      : 'bg-slate-700 border-slate-600'
+                                  }`}
+                                  style={{
+                                    width: CARD_SIZES.xs.width,
+                                    height: CARD_SIZES.xs.height,
+                                  }}
+                                >
+                                  <span className="text-slate-500 text-2xl">?</span>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
-                  {/* スコア詳細 */}
-                  <div className="text-right">
-                    <div className={`text-2xl font-bold ${index === 0 ? 'text-amber-300' : 'text-white'}`}>
-                      {result.finalScore}pt
-                    </div>
-                    <div className="text-slate-400 text-xs">
-                      {result.completedScore}pt
-                      {result.finishingPenalty > 0 && <span className="text-red-400"> -{result.finishingPenalty}</span>}
-                      {result.incompletePenalty > 0 && <span className="text-red-400"> -{result.incompletePenalty}</span>}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
+          {/* 最終結果（全パズルオープン後） */}
+          <AnimatePresence>
+            {showFinalResults && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-800/80 rounded-xl p-4 max-w-2xl w-full"
+              >
+                <div className="space-y-2">
+                  {playerResults.map((result, index) => (
+                    <div
+                      key={result.player.id}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        index === 0
+                          ? 'bg-amber-600/30 border-2 border-amber-400'
+                          : 'bg-slate-700/50 border border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                          index === 0
+                            ? 'bg-amber-400 text-amber-900'
+                            : index === 1
+                              ? 'bg-slate-300 text-slate-700'
+                              : index === 2
+                                ? 'bg-amber-700 text-amber-100'
+                                : 'bg-slate-600 text-slate-300'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div className="text-white font-bold">{result.player.name}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xl font-bold ${index === 0 ? 'text-amber-300' : 'text-white'}`}>
+                          {result.finalScore}pt
+                        </span>
+                        <span className="text-slate-400 text-xs ml-2">
+                          ({result.completedScore}
+                          {result.finishingPenalty > 0 && <span className="text-red-400">-{result.finishingPenalty}</span>}
+                          {result.incompletePenalty > 0 && <span className="text-red-400">-{result.incompletePenalty}</span>})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* ボタン */}
-          <div className="mt-8 flex gap-4">
-            <button
-              onClick={onLeaveRoom}
-              className="px-6 py-3 bg-teal-600 hover:bg-teal-500 rounded-lg text-white font-bold"
+          {showFinalResults && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-6"
             >
-              ロビーに戻る
-            </button>
-          </div>
+              <button
+                onClick={onLeaveRoom}
+                className="px-6 py-3 bg-teal-600 hover:bg-teal-500 rounded-lg text-white font-bold"
+              >
+                ロビーに戻る
+              </button>
+            </motion.div>
+          )}
         </div>
       </div>
     );

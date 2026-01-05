@@ -98,6 +98,7 @@ export const createInitialPlayer = (id: string, name: string): Player => {
     name,
     pieces: initialPieces,
     workingPuzzles: [],
+    completedPuzzles: [],
     completedPuzzleIds: [],
     completedWhite: 0,
     completedBlack: 0,
