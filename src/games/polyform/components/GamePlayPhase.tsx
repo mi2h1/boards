@@ -160,6 +160,13 @@ export const GamePlayPhase = ({
   type ActionMode = 'none' | 'takePuzzle' | 'placePiece' | 'pieceChange' | 'recycle' | 'masterAction';
   const [actionMode, setActionMode] = useState<ActionMode>('none');
 
+  // ピース配置の仮状態（確定前）
+  const [pendingPlacement, setPendingPlacement] = useState<{
+    puzzleId: string;
+    piece: PieceInstance;
+    placedPiece: PlacedPiece;
+  } | null>(null);
+
   // レスポンシブカードサイズ（7段階）
   const [cardSize, setCardSize] = useState<CardSizeType>('md');
 
@@ -1123,7 +1130,51 @@ export const GamePlayPhase = ({
       return;
     }
 
-    // 通常のピース配置：アクション消費
+    // 通常のピース配置：仮配置状態にして確定を待つ
+    setPendingPlacement({
+      puzzleId,
+      piece: selectedPiece,
+      placedPiece: newPlacedPiece,
+    });
+    setAnnouncement('配置を確定してください');
+    console.log('ピース仮配置:', { puzzleId, position, piece: selectedPiece.type });
+  };
+
+  // ピース配置を確定
+  const handleConfirmPlacement = () => {
+    if (!pendingPlacement || !onUpdateGameState) return;
+
+    const { puzzleId, piece, placedPiece } = pendingPlacement;
+
+    const workingPuzzle = currentPlayer.workingPuzzles.find((wp) => wp.cardId === puzzleId);
+    if (!workingPuzzle) return;
+
+    const card = ALL_PUZZLES.find((p) => p.id === puzzleId);
+    if (!card) return;
+
+    const newPlacedPieces = [...workingPuzzle.placedPieces, placedPiece];
+
+    // 完成判定
+    const totalCells = card.shape.flat().filter(Boolean).length;
+    let filledCells = 0;
+    newPlacedPieces.forEach((placed) => {
+      const shape = getTransformedShape(placed.type, placed.rotation, placed.flipped);
+      filledCells += shape.length;
+    });
+    const isCompleted = filledCells === totalCells;
+
+    // 手持ちからピースを削除
+    const updatedPieces = currentPlayer.pieces.filter((p) => p.id !== piece.id);
+
+    // 配置を更新
+    const updatedWorkingPuzzles = currentPlayer.workingPuzzles.map((wp) => {
+      if (wp.cardId === puzzleId) {
+        return { ...wp, placedPieces: newPlacedPieces };
+      }
+      return wp;
+    });
+
+    // アクション消費
     const newRemainingActions = currentPlayer.remainingActions - 1;
     const turnEnded = newRemainingActions <= 0;
     const nextPlayerIndex = turnEnded
@@ -1131,52 +1182,49 @@ export const GamePlayPhase = ({
       : gameState.currentPlayerIndex;
     const nextPlayerId = gameState.playerOrder[nextPlayerIndex];
 
+    // ターン番号の計算
+    const isEndOfFullTurn = turnEnded && nextPlayerIndex === 0;
+    const nextTurnNumber = isEndOfFullTurn ? gameState.currentTurnNumber + 1 : gameState.currentTurnNumber;
+
     // Firebaseに同期
-    if (onUpdateGameState) {
-      const updatedPlayers = gameState.players.map((p) => {
-        if (p.id === debugControlPlayerId) {
-          return {
-            ...p,
-            pieces: updatedPieces,
-            workingPuzzles: updatedWorkingPuzzles,
-            remainingActions: turnEnded ? 0 : newRemainingActions,
-          };
-        }
-        if (turnEnded && p.id === nextPlayerId) {
-          return { ...p, remainingActions: 3, usedMasterAction: false };
-        }
-        return p;
-      });
-
-      // ターン番号の計算
-      const isEndOfFullTurn = turnEnded && nextPlayerIndex === 0;
-      const nextTurnNumber = isEndOfFullTurn ? gameState.currentTurnNumber + 1 : gameState.currentTurnNumber;
-
-      const updates: Partial<GameState> = {
-        players: updatedPlayers,
-        currentPlayerIndex: nextPlayerIndex,
-        currentTurnNumber: nextTurnNumber,
-      };
-
-      // 最終ラウンド終了チェック（フルターン終了時に判定）
-      const shouldEndFinalRound =
-        gameState.finalRound &&
-        isEndOfFullTurn &&
-        gameState.finalRoundTurnNumber !== null &&
-        nextTurnNumber > gameState.finalRoundTurnNumber + 1;
-
-      if (shouldEndFinalRound) {
-        updates.phase = 'finishing';
-        setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+    const updatedPlayers = gameState.players.map((p) => {
+      if (p.id === debugControlPlayerId) {
+        return {
+          ...p,
+          pieces: updatedPieces,
+          workingPuzzles: updatedWorkingPuzzles,
+          remainingActions: turnEnded ? 0 : newRemainingActions,
+        };
       }
+      if (turnEnded && p.id === nextPlayerId) {
+        return { ...p, remainingActions: 3, usedMasterAction: false };
+      }
+      return p;
+    });
 
-      onUpdateGameState(updates);
+    const updates: Partial<GameState> = {
+      players: updatedPlayers,
+      currentPlayerIndex: nextPlayerIndex,
+      currentTurnNumber: nextTurnNumber,
+    };
+
+    // 最終ラウンド終了チェック（フルターン終了時に判定）
+    const shouldEndFinalRound =
+      gameState.finalRound &&
+      isEndOfFullTurn &&
+      gameState.finalRoundTurnNumber !== null &&
+      nextTurnNumber > gameState.finalRoundTurnNumber + 1;
+
+    if (shouldEndFinalRound) {
+      updates.phase = 'finishing';
+      setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
     }
 
-    // アクション完了後にリセット（マスターアクション以外）
-    if (!masterActionMode) {
-      setActionMode('none');
-    }
+    onUpdateGameState(updates);
+
+    // 状態をリセット
+    setPendingPlacement(null);
+    setActionMode('none');
 
     // 完成時は遅延処理をセット
     if (isCompleted) {
@@ -1190,8 +1238,16 @@ export const GamePlayPhase = ({
     } else {
       setAnnouncement('ピースを配置');
     }
+  };
 
-    console.log('ピース配置:', { puzzleId, position, piece: selectedPiece.type, completed: isCompleted });
+  // ピース配置をキャンセル
+  const handleCancelPlacement = () => {
+    setPendingPlacement(null);
+    setSelectedPieceId(null);
+    setRotation(0);
+    setFlipped(false);
+    setAnnouncement(null);
+    setActionMode('none'); // アクション選択に戻る
   };
 
   // マスターアクション開始
@@ -2162,10 +2218,17 @@ export const GamePlayPhase = ({
                           <button onClick={() => setActionMode('none')} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
                         </>
                       )}
-                      {actionMode === 'placePiece' && (
+                      {actionMode === 'placePiece' && !pendingPlacement && (
                         <>
                           <span className="text-teal-300 text-sm">ピースを選んでパズルにドラッグ</span>
                           <button onClick={() => setActionMode('none')} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
+                        </>
+                      )}
+                      {actionMode === 'placePiece' && pendingPlacement && (
+                        <>
+                          <span className="text-teal-300 text-sm">配置を確定しますか？</span>
+                          <button onClick={handleConfirmPlacement} className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm font-medium">確定</button>
+                          <button onClick={handleCancelPlacement} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
                         </>
                       )}
                       {actionMode === 'pieceChange' && (
@@ -2424,7 +2487,11 @@ export const GamePlayPhase = ({
                   >
                     <DroppablePuzzleCard
                       card={wp.card}
-                      placedPieces={wp.placedPieces}
+                      placedPieces={
+                        pendingPlacement?.puzzleId === wp.cardId
+                          ? [...wp.placedPieces, pendingPlacement.placedPiece]
+                          : wp.placedPieces
+                      }
                       size={cardSize}
                       completed={completedPuzzleId === wp.cardId}
                       disabled={masterActionMode && masterActionPlacedPuzzles.has(wp.cardId)}
@@ -2511,7 +2578,11 @@ export const GamePlayPhase = ({
                 const canInteract = isFinishingPhase
                   ? !currentPlayer.finishingDone // 仕上げフェーズ：完了していなければ操作可能
                   : (actionMode === 'placePiece' || actionMode === 'pieceChange' || masterActionMode);
-                return currentPlayer.pieces.map((piece) => (
+                // 仮配置中のピースは非表示
+                const displayPieces = pendingPlacement
+                  ? currentPlayer.pieces.filter((p) => p.id !== pendingPlacement.piece.id)
+                  : currentPlayer.pieces;
+                return displayPieces.map((piece) => (
                   <div
                     key={piece.id}
                     onMouseDown={canInteract ? (e) => handleDragStart(piece.id, e) : undefined}
