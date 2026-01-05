@@ -2101,12 +2101,13 @@ export const GamePlayPhase = ({
               ) : (
                 /* 通常フェーズ用のUI */
                 <>
-              {/* インフォパネル（2カラム：左にターン情報、右にピース一覧） */}
-              <div className="flex gap-4 mb-3 h-24">
-                {/* 左カラム：ターン情報（3段） */}
-                <div className="flex-1 flex flex-col gap-1">
-                  {/* 1段目: ラウンド｜ターン */}
-                  <div className="flex items-center justify-center gap-2 h-7">
+              {/* インフォパネル＋ピース一覧（2カラム） */}
+              <div className="flex gap-4 mb-3">
+                {/* 左パネル：ターン情報（3段） */}
+                <div className="flex-1 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-24">
+                  <div className="flex flex-col gap-1 h-full">
+                    {/* 1段目: ラウンド｜ターン */}
+                    <div className="flex items-center justify-center gap-2 h-7">
                     <span className="text-slate-400 text-sm">
                       ラウンド {gameState.currentTurnNumber}
                     </span>
@@ -2278,15 +2279,16 @@ export const GamePlayPhase = ({
                     </>
                   )}
 
-                  {/* 相手のターン */}
-                  {!isMyTurn && !masterActionMode && (
-                    <span className="text-slate-500 text-sm">相手のアクションを待っています...</span>
-                  )}
+                    {/* 相手のターン */}
+                    {!isMyTurn && !masterActionMode && (
+                      <span className="text-slate-500 text-sm">相手のアクションを待っています...</span>
+                    )}
                   </div>
                 </div>
+                </div>
 
-                {/* 右カラム：ピースストック一覧 */}
-                <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-2 flex items-center">
+                {/* 右パネル：ピースストック一覧 */}
+                <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-24 flex items-center">
                   <div className="flex gap-4">
                     {[1, 2, 3, 4].map((level) => (
                       <div key={level} className="flex flex-col items-center gap-0.5">
