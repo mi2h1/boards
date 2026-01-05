@@ -23,6 +23,7 @@ interface PuzzleCardDisplayProps {
   onClick?: () => void;
   selected?: boolean;
   showReward?: boolean;
+  compact?: boolean; // パディングを減らしたコンパクト表示
 }
 
 export const PuzzleCardDisplay = ({
@@ -32,6 +33,7 @@ export const PuzzleCardDisplay = ({
   onClick,
   selected = false,
   showReward = true,
+  compact = false,
 }: PuzzleCardDisplayProps) => {
   const sizeConfig = CARD_SIZES[size];
   const cellSize = sizeConfig.cell;
@@ -65,7 +67,7 @@ export const PuzzleCardDisplay = ({
   return (
     <div
       onClick={onClick}
-      className={`${cardSize} flex flex-col rounded-lg p-4 transition-all bg-cover bg-center ${
+      className={`${cardSize} flex flex-col rounded-lg ${compact ? 'p-1.5' : 'p-4'} transition-all bg-cover bg-center ${
         onClick ? 'cursor-pointer hover:scale-105' : ''
       } ${selected ? 'ring-2 ring-teal-400 ring-offset-2 ring-offset-slate-900' : ''} ${
         isComplete ? 'ring-2 ring-yellow-400' : ''

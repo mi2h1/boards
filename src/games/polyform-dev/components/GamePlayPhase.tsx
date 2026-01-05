@@ -1201,120 +1201,75 @@ export const GamePlayPhase = ({
             <h1 className="text-2xl font-bold text-white">結果発表</h1>
           </div>
 
-          {/* 各プレイヤーの完成パズル表示 */}
-          <div className="w-full max-w-6xl mb-6">
-            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${gameState.players.length}, 1fr)` }}>
-              {gameState.players.map((player) => {
-                const result = playerResults.find((r) => r.player.id === player.id);
-                const completedPuzzles = player.completedPuzzles || [];
+          {/* 各プレイヤーの完成パズル表示（縦に行で並ぶ） */}
+          <div className="w-full max-w-5xl space-y-3 mb-6">
+            {gameState.players.map((player) => {
+              const result = playerResults.find((r) => r.player.id === player.id);
+              const completedPuzzles = player.completedPuzzles || [];
 
-                return (
-                  <div key={player.id} className="bg-slate-800/60 rounded-lg p-3">
-                    {/* プレイヤー名とスコア */}
-                    <div className="text-center mb-3">
-                      <div className="text-white font-bold text-sm">{player.name}</div>
-                      <AnimatePresence>
-                        {showFinalResults && result && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="text-amber-300 font-bold text-lg"
-                          >
-                            {result.finalScore}pt
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* 完成パズル一覧 */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      {completedPuzzles.length === 0 ? (
-                        <div className="text-slate-500 text-xs py-4">完成なし</div>
-                      ) : (
-                        completedPuzzles.map((cp, cardIndex) => {
-                          const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
-                          if (!card) return null;
-
-                          const isRevealed = cardIndex <= revealedCardIndex;
-
-                          return (
-                            <motion.div
-                              key={cp.cardId}
-                              initial={{ rotateY: 90, opacity: 0 }}
-                              animate={{
-                                rotateY: isRevealed ? 0 : 90,
-                                opacity: isRevealed ? 1 : 0,
-                              }}
-                              transition={{ duration: 0.5, ease: 'easeOut' }}
-                              style={{ perspective: 1000 }}
-                            >
-                              {isRevealed && (
-                                <PuzzleCardDisplay
-                                  card={card}
-                                  size="xxs"
-                                  placedPieces={cp.placedPieces}
-                                  showReward={false}
-                                />
-                              )}
-                            </motion.div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 最終結果（全パズルオープン後） */}
-          <AnimatePresence>
-            {showFinalResults && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-slate-800/80 rounded-xl p-4 max-w-2xl w-full"
-              >
-                <div className="space-y-2">
-                  {playerResults.map((result, index) => (
-                    <div
-                      key={result.player.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        index === 0
-                          ? 'bg-amber-600/30 border-2 border-amber-400'
-                          : 'bg-slate-700/50 border border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                          index === 0
-                            ? 'bg-amber-400 text-amber-900'
-                            : index === 1
-                              ? 'bg-slate-300 text-slate-700'
-                              : index === 2
-                                ? 'bg-amber-700 text-amber-100'
-                                : 'bg-slate-600 text-slate-300'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <div className="text-white font-bold">{result.player.name}</div>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-xl font-bold ${index === 0 ? 'text-amber-300' : 'text-white'}`}>
+              return (
+                <div key={player.id} className="bg-slate-800/60 rounded-lg p-3">
+                  {/* プレイヤー名とスコア（左上） */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-white font-bold">{player.name}</div>
+                    <AnimatePresence>
+                      {showFinalResults && result && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="text-amber-300 font-bold"
+                        >
                           {result.finalScore}pt
-                        </span>
-                        <span className="text-slate-400 text-xs ml-2">
-                          ({result.completedScore}
-                          {result.finishingPenalty > 0 && <span className="text-red-400">-{result.finishingPenalty}</span>}
-                          {result.incompletePenalty > 0 && <span className="text-red-400">-{result.incompletePenalty}</span>})
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                          <span className="text-slate-400 text-xs ml-1">
+                            ({result.completedScore}
+                            {result.finishingPenalty > 0 && <span className="text-red-400">-{result.finishingPenalty}</span>}
+                            {result.incompletePenalty > 0 && <span className="text-red-400">-{result.incompletePenalty}</span>})
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* 完成パズル一覧（横並び） */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {completedPuzzles.length === 0 ? (
+                      <div className="text-slate-500 text-xs py-2">完成なし</div>
+                    ) : (
+                      completedPuzzles.map((cp, cardIndex) => {
+                        const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
+                        if (!card) return null;
+
+                        const isRevealed = cardIndex <= revealedCardIndex;
+
+                        return (
+                          <motion.div
+                            key={cp.cardId}
+                            initial={{ rotateY: 90, opacity: 0 }}
+                            animate={{
+                              rotateY: isRevealed ? 0 : 90,
+                              opacity: isRevealed ? 1 : 0,
+                            }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            style={{ perspective: 1000 }}
+                          >
+                            {isRevealed && (
+                              <PuzzleCardDisplay
+                                card={card}
+                                size="xxs"
+                                placedPieces={cp.placedPieces}
+                                showReward={false}
+                                compact={true}
+                              />
+                            )}
+                          </motion.div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              );
+            })}
+          </div>
 
           {/* ボタン */}
           {showFinalResults && (
