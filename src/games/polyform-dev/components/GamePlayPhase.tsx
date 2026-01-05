@@ -2284,24 +2284,27 @@ export const GamePlayPhase = ({
 
                 {/* ピース一覧 */}
                 <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-28 flex items-center">
-                  <div className="flex gap-4">
-                    {[1, 2, 3, 4].map((level) => (
-                      <div key={level} className="flex flex-col items-center gap-2">
-                        <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
-                        <div className="flex gap-1 items-end">
-                          {PIECES_BY_LEVEL[level].map((type) => (
-                            <div key={type} className="flex flex-col items-center">
-                              <div className="h-4 flex items-end">
-                                <PieceDisplay type={type} size="xs" />
+                  <div className="flex gap-4 items-center">
+                    {[1, 2, 3, 4].map((level, index) => (
+                      <div key={level} className="flex items-center gap-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
+                          <div className="flex gap-1 items-end">
+                            {PIECES_BY_LEVEL[level].map((type) => (
+                              <div key={type} className="flex flex-col items-center">
+                                <div className="h-4 flex items-end">
+                                  <PieceDisplay type={type} size="xs" />
+                                </div>
+                                <span className={`text-xs leading-tight ${
+                                  gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
+                                }`}>
+                                  {gameState.pieceStock[type]}
+                                </span>
                               </div>
-                              <span className={`text-xs leading-tight ${
-                                gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
-                              }`}>
-                                {gameState.pieceStock[type]}
-                              </span>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
+                        {index < 3 && <div className="w-px h-12 bg-slate-600" />}
                       </div>
                     ))}
                   </div>
