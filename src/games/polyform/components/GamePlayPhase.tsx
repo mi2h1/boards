@@ -2039,16 +2039,15 @@ export const GamePlayPhase = ({
               ) : (
                 /* 通常フェーズ用のUI */
                 <>
-              {/* 上段：ターン情報＋アナウンス（高さ固定） */}
-              <div className="flex items-center justify-center gap-4 mb-3 h-8">
-                <div className="flex items-center gap-3">
-                  {/* ラウンド数表示 */}
+              {/* インフォパネル（3段構成・高さ固定） */}
+              <div className="flex flex-col gap-1 mb-3 h-24">
+                {/* 1段目: ラウンド｜ターン */}
+                <div className="flex items-center justify-center gap-2 h-7">
                   <span className="text-slate-400 text-sm">
                     ラウンド {gameState.currentTurnNumber}
                   </span>
-                  {/* 最終ラウンド表示 */}
                   {gameState.finalRound && (
-                    <span className={`text-sm font-bold px-2 py-0.5 rounded ${
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                       gameState.finalRoundTurnNumber !== null && gameState.currentTurnNumber > gameState.finalRoundTurnNumber
                         ? 'bg-red-600 text-white'
                         : 'bg-yellow-600 text-white'
@@ -2062,25 +2061,15 @@ export const GamePlayPhase = ({
                   <span className={`text-sm font-medium ${isMyTurn ? 'text-teal-400' : 'text-slate-400'}`}>
                     {isMyTurn ? 'あなたのターン' : `${gameState.players.find(p => p.id === activePlayerId)?.name}のターン`}
                   </span>
+                </div>
+
+                {/* 2段目: 残りアクション＋アナウンス */}
+                <div className="flex items-center justify-center gap-3 h-7">
                   <span className="text-slate-500 text-sm">
                     残りアクション: <span className={`font-bold ${
                       gameState.players.find(p => p.id === activePlayerId)?.remainingActions === 0 ? 'text-slate-500' : 'text-white'
                     }`}>{gameState.players.find(p => p.id === activePlayerId)?.remainingActions ?? 0}</span>
                   </span>
-                  {/* リセットボタン（自分のターン＆1アクション以上使用＆マスターアクション中でない） */}
-                  {isMyTurn && currentPlayer.remainingActions < 3 && !masterActionMode && turnStartSnapshot && (
-                    <button
-                      onClick={handleResetTurn}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-xs transition-all"
-                      title="ターンをリセット"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>リセット</span>
-                    </button>
-                  )}
-                </div>
-                {/* 自分のターン時のみ上段にアナウンス表示 */}
-                {isMyTurn && (
                   <AnimatePresence mode="wait">
                     {announcement && (
                       <motion.div
@@ -2088,219 +2077,149 @@ export const GamePlayPhase = ({
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
-                        className="bg-teal-600 text-white px-3 py-1 rounded-full text-sm font-medium"
+                        className={`px-3 py-0.5 rounded-full text-sm font-medium ${
+                          isMyTurn ? 'bg-teal-600 text-white' : 'bg-amber-600 text-white'
+                        }`}
                       >
                         {announcement}
                       </motion.div>
                     )}
                   </AnimatePresence>
-                )}
-              </div>
-
-              {/* 下段：アクション選択 or ガイド表示 */}
-              {isMyTurn && currentPlayer.remainingActions > 0 && !masterActionMode && (
-                <>
-                  {/* アクション未選択時：ボタン一覧 */}
-                  {actionMode === 'none' && (
-                    <div className="flex items-center justify-center gap-2 flex-wrap">
-                      <button
-                        onClick={() => setActionMode('takePuzzle')}
-                        disabled={currentPlayer.workingPuzzles.length >= 4}
-                        className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
-                          currentPlayer.workingPuzzles.length >= 4
-                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                            : 'bg-slate-700 text-white hover:bg-slate-600'
-                        }`}
-                      >
-                        パズル取得
-                      </button>
-                      <button
-                        onClick={handleGetLevel1Piece}
-                        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-white text-sm font-medium transition-all flex items-center gap-1"
-                      >
-                        <PieceDisplay type="dot" size="xs" />
-                        <span>ピース獲得</span>
-                      </button>
-                      <button
-                        onClick={() => setActionMode('placePiece')}
-                        disabled={currentPlayer.pieces.length === 0 || currentPlayer.workingPuzzles.length === 0}
-                        className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
-                          currentPlayer.pieces.length === 0 || currentPlayer.workingPuzzles.length === 0
-                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                            : 'bg-slate-700 text-white hover:bg-slate-600'
-                        }`}
-                      >
-                        ピース配置
-                      </button>
-                      <button
-                        onClick={() => setActionMode('pieceChange')}
-                        disabled={currentPlayer.pieces.length === 0}
-                        className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
-                          currentPlayer.pieces.length === 0
-                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                            : 'bg-slate-700 text-white hover:bg-slate-600'
-                        }`}
-                      >
-                        ピース変更
-                      </button>
-                      <button
-                        onClick={() => setActionMode('recycle')}
-                        className="px-3 py-1.5 bg-slate-700 text-white hover:bg-slate-600 rounded text-sm font-medium transition-all"
-                      >
-                        リサイクル
-                      </button>
-                      {!currentPlayer.usedMasterAction && currentPlayer.workingPuzzles.length > 0 && (
-                        <button
-                          onClick={handleStartMasterAction}
-                          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium transition-all"
-                        >
-                          マスター
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* アクション選択後：ガイド表示 */}
-                  {actionMode === 'takePuzzle' && (
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-teal-300 text-sm">場からカードを取得してください（カードまたは山札をクリック）</span>
-                      <button
-                        onClick={() => setActionMode('none')}
-                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  )}
-
-                  {actionMode === 'placePiece' && (
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-teal-300 text-sm">ピースを選んでパズルにドラッグしてください</span>
-                      <button
-                        onClick={() => setActionMode('none')}
-                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  )}
-
-                  {actionMode === 'pieceChange' && (
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-teal-300 text-sm">変更するピースを選んでください</span>
-                      <button
-                        onClick={() => {
-                          setActionMode('none');
-                          setPieceChangeMode(null);
-                          setSelectedPieceId(null);
-                        }}
-                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  )}
-
-                  {actionMode === 'recycle' && (
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-teal-300 text-sm">リサイクルする色を選択:</span>
-                      <button
-                        onClick={() => {
-                          handleRecycle('white');
-                          setActionMode('none');
-                        }}
-                        disabled={gameState.whitePuzzleMarket.length < 4 || gameState.whitePuzzleDeck.length < 4}
-                        className="px-3 py-1.5 bg-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-700 text-sm font-medium"
-                      >
-                        白
-                      </button>
-                      <button
-                        onClick={() => {
-                          handleRecycle('black');
-                          setActionMode('none');
-                        }}
-                        disabled={gameState.blackPuzzleMarket.length < 4 || gameState.blackPuzzleDeck.length < 4}
-                        className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-sm font-medium border border-slate-500"
-                      >
-                        黒
-                      </button>
-                      <button
-                        onClick={() => setActionMode('none')}
-                        className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
-                      >
-                        キャンセル
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* マスターアクション中の表示 */}
-              {masterActionMode && (
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-purple-300 text-sm">
-                    マスターアクション中（{masterActionPlacedPuzzles.size}/{currentPlayer.workingPuzzles.length}枚配置
-                    {masterActionPendingCompletions.length > 0 && `、${masterActionPendingCompletions.length}枚完成`}）
-                  </span>
-                  <button
-                    onClick={handleCompleteMasterAction}
-                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium"
-                  >
-                    完了
-                  </button>
-                  <button
-                    onClick={handleCancelMasterAction}
-                    className="px-2 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
-                  >
-                    中止
-                  </button>
                 </div>
-              )}
 
-              {/* ターン外 or アクション無しの表示 */}
-              {(!isMyTurn || currentPlayer.remainingActions <= 0) && !masterActionMode && (
-                <div className="flex items-center justify-center gap-3">
-                  {/* 自分のターンでアクション使い切り：確定/リセット選択 */}
-                  {currentPlayer.remainingActions <= 0 && isMyTurn ? (
+                {/* 3段目: ボタン群 */}
+                <div className="flex items-center justify-center gap-2 h-8">
+                  {/* 自分のターン＆アクション残り＆マスターでない */}
+                  {isMyTurn && currentPlayer.remainingActions > 0 && !masterActionMode && (
+                    <>
+                      {actionMode === 'none' && (
+                        <>
+                          <button
+                            onClick={() => setActionMode('takePuzzle')}
+                            disabled={currentPlayer.workingPuzzles.length >= 4}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                              currentPlayer.workingPuzzles.length >= 4
+                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                : 'bg-slate-700 text-white hover:bg-slate-600'
+                            }`}
+                          >
+                            パズル取得
+                          </button>
+                          <button
+                            onClick={handleGetLevel1Piece}
+                            className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white text-sm font-medium transition-all flex items-center gap-1"
+                          >
+                            <PieceDisplay type="dot" size="xs" />
+                            <span>ピース獲得</span>
+                          </button>
+                          <button
+                            onClick={() => setActionMode('placePiece')}
+                            disabled={currentPlayer.pieces.length === 0 || currentPlayer.workingPuzzles.length === 0}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                              currentPlayer.pieces.length === 0 || currentPlayer.workingPuzzles.length === 0
+                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                : 'bg-slate-700 text-white hover:bg-slate-600'
+                            }`}
+                          >
+                            ピース配置
+                          </button>
+                          <button
+                            onClick={() => setActionMode('pieceChange')}
+                            disabled={currentPlayer.pieces.length === 0}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                              currentPlayer.pieces.length === 0
+                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                : 'bg-slate-700 text-white hover:bg-slate-600'
+                            }`}
+                          >
+                            ピース変更
+                          </button>
+                          <button
+                            onClick={() => setActionMode('recycle')}
+                            className="px-3 py-1 bg-slate-700 text-white hover:bg-slate-600 rounded text-sm font-medium transition-all"
+                          >
+                            リサイクル
+                          </button>
+                          {!currentPlayer.usedMasterAction && currentPlayer.workingPuzzles.length > 0 && (
+                            <button
+                              onClick={handleStartMasterAction}
+                              className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium transition-all"
+                            >
+                              マスター
+                            </button>
+                          )}
+                          {currentPlayer.remainingActions < 3 && turnStartSnapshot && (
+                            <button
+                              onClick={handleResetTurn}
+                              className="flex items-center gap-1 px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-300 text-xs transition-all"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>リセット</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {actionMode === 'takePuzzle' && (
+                        <>
+                          <span className="text-teal-300 text-sm">場からカードを取得してください</span>
+                          <button onClick={() => setActionMode('none')} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
+                        </>
+                      )}
+                      {actionMode === 'placePiece' && (
+                        <>
+                          <span className="text-teal-300 text-sm">ピースを選んでパズルにドラッグ</span>
+                          <button onClick={() => setActionMode('none')} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
+                        </>
+                      )}
+                      {actionMode === 'pieceChange' && (
+                        <>
+                          <span className="text-teal-300 text-sm">変更するピースを選択</span>
+                          <button onClick={() => { setActionMode('none'); setPieceChangeMode(null); setSelectedPieceId(null); }} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
+                        </>
+                      )}
+                      {actionMode === 'recycle' && (
+                        <>
+                          <span className="text-teal-300 text-sm">リサイクルする色:</span>
+                          <button onClick={() => { handleRecycle('white'); setActionMode('none'); }} disabled={gameState.whitePuzzleMarket.length < 4 || gameState.whitePuzzleDeck.length < 4} className="px-3 py-1 bg-slate-200 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed rounded text-slate-700 text-sm font-medium">白</button>
+                          <button onClick={() => { handleRecycle('black'); setActionMode('none'); }} disabled={gameState.blackPuzzleMarket.length < 4 || gameState.blackPuzzleDeck.length < 4} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-sm font-medium border border-slate-500">黒</button>
+                          <button onClick={() => setActionMode('none')} className="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">キャンセル</button>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* マスターアクション中 */}
+                  {masterActionMode && (
+                    <>
+                      <span className="text-purple-300 text-sm">
+                        マスターアクション（{masterActionPlacedPuzzles.size}/{currentPlayer.workingPuzzles.length}枚
+                        {masterActionPendingCompletions.length > 0 && `、${masterActionPendingCompletions.length}完成`}）
+                      </span>
+                      <button onClick={handleCompleteMasterAction} className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium">完了</button>
+                      <button onClick={handleCancelMasterAction} className="px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">中止</button>
+                    </>
+                  )}
+
+                  {/* アクション使い切り */}
+                  {isMyTurn && currentPlayer.remainingActions <= 0 && !masterActionMode && (
                     <>
                       <span className="text-slate-400 text-sm">アクションを使い切りました</span>
-                      <button
-                        onClick={handleConfirmTurn}
-                        className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm font-medium transition-all"
-                      >
-                        ターン確定
-                      </button>
+                      <button onClick={handleConfirmTurn} className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm font-medium">ターン確定</button>
                       {turnStartSnapshot && (
-                        <button
-                          onClick={handleResetTurn}
-                          className="flex items-center gap-1 px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm transition-all"
-                        >
+                        <button onClick={handleResetTurn} className="flex items-center gap-1 px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm">
                           <RotateCcw className="w-3 h-3" />
                           <span>やり直す</span>
                         </button>
                       )}
                     </>
-                  ) : (
+                  )}
+
+                  {/* 相手のターン */}
+                  {!isMyTurn && !masterActionMode && (
                     <span className="text-slate-500 text-sm">相手のアクションを待っています...</span>
                   )}
-                  {/* 他人のターン時は下段にアナウンス表示 */}
-                  {!isMyTurn && (
-                    <AnimatePresence mode="wait">
-                      {announcement && (
-                        <motion.div
-                          key={announcement}
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -10 }}
-                          className="bg-amber-600 text-white px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          {announcement}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  )}
                 </div>
-              )}
+              </div>
                 </>
               )}
             </div>
