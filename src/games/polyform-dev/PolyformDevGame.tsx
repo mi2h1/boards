@@ -3,6 +3,7 @@ import { usePlayer } from '../../shared/hooks/usePlayer';
 import { useRoom } from './hooks/useRoom';
 import { Lobby } from './components/Lobby';
 import { GamePlayPhase } from './components/GamePlayPhase';
+import { GameStartTransition } from './components/GameStartTransition';
 
 interface PolyformDevGameProps {
   onBack?: () => void;
@@ -35,6 +36,8 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
 
   // フェードアウト状態
   const [isFadingOut, setIsFadingOut] = useState(false);
+  // トランジション表示状態
+  const [showTransition, setShowTransition] = useState(false);
 
   const gameState = roomData?.gameState;
   const players = gameState?.players ?? [];
@@ -43,6 +46,8 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
   const handleStartGame = () => {
     if (!isHost) return;
 
+    // トランジションを表示
+    setShowTransition(true);
     // ロビーをフェードアウト
     setIsFadingOut(true);
 
@@ -90,37 +95,49 @@ export const PolyformDevGame = ({ onBack }: PolyformDevGameProps) => {
   // ゲームプレイ中
   if (gameState && gameState.phase !== 'waiting' && playerId) {
     return (
-      <GamePlayPhase
-        gameState={gameState}
-        currentPlayerId={playerId}
-        isHost={isHost}
-        onLeaveRoom={leaveRoom}
-        onUpdateGameState={updateGameState}
-        onPlayAgain={handlePlayAgain}
-      />
+      <>
+        {/* ゲーム開始トランジション */}
+        {showTransition && (
+          <GameStartTransition onComplete={() => setShowTransition(false)} />
+        )}
+        <GamePlayPhase
+          gameState={gameState}
+          currentPlayerId={playerId}
+          isHost={isHost}
+          onLeaveRoom={leaveRoom}
+          onUpdateGameState={updateGameState}
+          onPlayAgain={handlePlayAgain}
+        />
+      </>
     );
   }
 
   // ロビー画面（デバッグモード有効）
   return (
-    <Lobby
-      roomCode={roomCode}
-      players={players}
-      isHost={isHost}
-      isLoading={isLoading}
-      error={error}
-      hostId={roomData?.hostId ?? ''}
-      playerName={playerName}
-      settings={gameState?.settings}
-      onCreateRoom={createRoom}
-      onJoinRoom={joinRoom}
-      onLeaveRoom={leaveRoom}
-      onStartGame={handleStartGame}
-      onUpdateSettings={updateSettings}
-      onBack={onBack}
-      debugMode={true}
-      onAddTestPlayer={addTestPlayer}
-      isFadingOut={isFadingOut}
-    />
+    <>
+      {/* ゲーム開始トランジション（ロビーの上に表示） */}
+      {showTransition && (
+        <GameStartTransition onComplete={() => setShowTransition(false)} />
+      )}
+      <Lobby
+        roomCode={roomCode}
+        players={players}
+        isHost={isHost}
+        isLoading={isLoading}
+        error={error}
+        hostId={roomData?.hostId ?? ''}
+        playerName={playerName}
+        settings={gameState?.settings}
+        onCreateRoom={createRoom}
+        onJoinRoom={joinRoom}
+        onLeaveRoom={leaveRoom}
+        onStartGame={handleStartGame}
+        onUpdateSettings={updateSettings}
+        onBack={onBack}
+        debugMode={true}
+        onAddTestPlayer={addTestPlayer}
+        isFadingOut={isFadingOut}
+      />
+    </>
   );
 };
