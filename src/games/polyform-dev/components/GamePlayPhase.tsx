@@ -2102,7 +2102,7 @@ export const GamePlayPhase = ({
               {/* インフォパネル＋ピース一覧（横並び） */}
               <div className="flex gap-4 mb-3">
                 {/* インフォパネル */}
-                <div className="flex-1 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-24">
+                <div className="flex-1 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-28">
                   <div className="flex flex-col gap-1 h-full">
                     {/* 1段目: ラウンド｜ターン */}
                     <div className="flex items-center justify-center gap-2 h-7">
@@ -2286,10 +2286,10 @@ export const GamePlayPhase = ({
                 </div>
 
                 {/* ピース一覧 */}
-                <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-24 flex items-center">
+                <div className="flex-shrink-0 bg-slate-800/50 border border-slate-600 rounded-lg p-3 h-28 flex items-center">
                   <div className="flex gap-4">
                     {[1, 2, 3, 4].map((level) => (
-                      <div key={level} className="flex flex-col items-center gap-1">
+                      <div key={level} className="flex flex-col items-center gap-2">
                         <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
                         <div className="flex gap-1 items-end">
                           {PIECES_BY_LEVEL[level].map((type) => (
