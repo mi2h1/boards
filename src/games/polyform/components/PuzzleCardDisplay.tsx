@@ -82,7 +82,7 @@ export const PuzzleCardDisplay = ({
         {/* ポイント */}
         <div
           className={`font-bold ${
-            compact ? 'text-base ml-1' : 'text-sm'
+            compact ? 'text-base ml-1' : 'text-sm ml-1'
           } ${
             card.type === 'white'
               ? 'text-slate-700'

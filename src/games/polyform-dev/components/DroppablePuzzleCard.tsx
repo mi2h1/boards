@@ -187,7 +187,7 @@ export const DroppablePuzzleCard = ({
       {/* カード情報ヘッダー（固定高さ） */}
       <div className="flex items-center justify-between h-6 mb-2">
         <div
-          className={`text-sm font-bold ${
+          className={`text-sm font-bold ml-1 ${
             card.type === 'white' ? 'text-slate-700' : 'text-yellow-500'
           }`}
         >

@@ -1455,7 +1455,6 @@ export const GamePlayPhase = ({
             <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-6" style={{ filter: 'brightness(0) invert(1)' }} />
             <div className="text-white">
               <span className="font-bold">{currentPlayer.name}</span>
-              <span className="text-white/60 ml-2">スコア: {currentPlayer.score}pt</span>
             </div>
             {isMyTurn ? (
               <span className="bg-teal-500 text-white text-xs px-2 py-1 rounded font-bold">
@@ -1484,11 +1483,6 @@ export const GamePlayPhase = ({
                 </option>
               ))}
             </select>
-            {isMyTurn && (
-              <span className="text-white/60 text-sm">
-                アクション残り: {currentPlayer.remainingActions}
-              </span>
-            )}
             {isMyTurn && (
               <button
                 onClick={handleEndTurn}
@@ -2211,17 +2205,11 @@ export const GamePlayPhase = ({
             {/* 選択中のピースのコントロール */}
             {selectedPiece && !levelChangeMode && (
               <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
-                <div className="text-white/60 text-sm mb-2">
-                  Lv.{PIECE_DEFINITIONS[selectedPiece.type].level}
-                  {actionMode === 'levelChange' ? ' UP/DOWNでレベル変更' : ' ドラッグして配置'}
-                </div>
                 <div className="flex items-center justify-between">
-                  <PieceDisplay
-                    type={selectedPiece.type}
-                    rotation={rotation}
-                    flipped={flipped}
-                    size={toPieceSize(cardSize)}
-                  />
+                  <div className="text-white/60 text-sm">
+                    Lv.{PIECE_DEFINITIONS[selectedPiece.type].level}
+                    {actionMode === 'levelChange' ? ' UP/DOWNでレベル変更' : ' ドラッグして配置'}
+                  </div>
                   <div className="flex gap-2">
                     {/* 回転・反転ボタン：ピース配置モード、マスターアクション中、または仕上げフェーズで表示 */}
                     {(actionMode === 'placePiece' || masterActionMode || (gameState.phase === 'finishing' && !currentPlayer.finishingDone)) && (
