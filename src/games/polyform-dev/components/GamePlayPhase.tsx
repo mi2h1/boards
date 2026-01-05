@@ -1132,8 +1132,14 @@ export const GamePlayPhase = ({
     ? { type: selectedPiece.type, rotation, flipped }
     : null;
 
-  // 他のプレイヤーを取得
-  const otherPlayers = gameState.players.filter((p) => p.id !== debugControlPlayerId);
+  // 他のプレイヤーを取得（プレイ順にソート）
+  const otherPlayers = gameState.players
+    .filter((p) => p.id !== debugControlPlayerId)
+    .sort((a, b) => {
+      const aIndex = gameState.playerOrder.indexOf(a.id);
+      const bIndex = gameState.playerOrder.indexOf(b.id);
+      return aIndex - bIndex;
+    });
 
   // 結果画面用：全プレイヤーの完成パズル数の最大値
   const maxCompletedPuzzles = Math.max(
