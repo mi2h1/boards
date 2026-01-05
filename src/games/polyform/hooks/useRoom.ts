@@ -204,10 +204,10 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
 
     setupPresence();
 
-    // ハートビート: 30秒ごとにプレゼンスを更新してFirebase接続を維持
+    // ハートビート: 15秒ごとにプレゼンスを更新してFirebase接続を維持
     const heartbeatInterval = setInterval(() => {
       set(myPresenceRef, Date.now()).catch(console.error);
-    }, 30000);
+    }, 15000);
 
     return () => {
       clearInterval(heartbeatInterval);
@@ -218,6 +218,7 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
   }, [roomCode, playerId]);
 
   // presenceの変更を監視
+  // 注意: ゲーム進行中はプレイヤー削除をスキップ（競合防止）
   useEffect(() => {
     if (!roomCode || !playerId) return;
 
@@ -232,6 +233,14 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
       if (!roomSnapshot.exists()) return;
 
       const room = roomSnapshot.val();
+      const gamePhase = room.gameState?.phase;
+
+      // ゲーム進行中（waiting以外）はプレイヤー削除をスキップ
+      // これにより、一時的な接続問題でゲームが壊れることを防ぐ
+      if (gamePhase && gamePhase !== 'waiting') {
+        return;
+      }
+
       const players = normalizeArray<Player>(room.gameState?.players);
       const currentHostId = room.hostId;
 
@@ -476,18 +485,37 @@ export const useRoom = (playerId: string | null, playerName: string | null) => {
     }
   }, [roomCode, roomData]);
 
-  // ゲーム状態を更新
-  const updateGameState = useCallback(async (newState: Partial<GameState>) => {
+  // ゲーム状態を更新（リトライ付き）
+  const updateGameState = useCallback(async (newState: Partial<GameState>, retryCount = 0) => {
     if (!roomCode) return;
 
+    const maxRetries = 3;
+    const gameStateRef = ref(db, `${FIREBASE_PATH}/${roomCode}/gameState`);
+
     try {
-      await update(ref(db, `${FIREBASE_PATH}/${roomCode}/gameState`), {
+      // まず部屋が存在するか確認
+      const roomSnapshot = await get(ref(db, `${FIREBASE_PATH}/${roomCode}`));
+      if (!roomSnapshot.exists()) {
+        console.warn('Room no longer exists, skipping update');
+        setError('ルームが見つかりません');
+        return;
+      }
+
+      await update(gameStateRef, {
         ...newState,
         updatedAt: Date.now(),
       });
     } catch (err) {
-      console.error('Update game state error:', err);
-      setError('状態の更新に失敗しました');
+      console.error(`Update game state error (attempt ${retryCount + 1}):`, err);
+
+      // リトライ
+      if (retryCount < maxRetries) {
+        console.log(`Retrying update... (${retryCount + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+        return updateGameState(newState, retryCount + 1);
+      }
+
+      setError('状態の更新に失敗しました。ページを再読み込みしてください。');
     }
   }, [roomCode]);
 
