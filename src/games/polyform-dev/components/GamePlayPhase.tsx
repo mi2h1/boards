@@ -1540,21 +1540,26 @@ export const GamePlayPhase = ({
                     <div className="flex gap-1">
                       {currentPlayer.workingPuzzles.map((wp) => {
                         const card = ALL_PUZZLES.find((p) => p.id === wp.cardId);
+                        if (!card) return null;
                         return (
                           <div
                             key={wp.cardId}
-                            className={`w-6 h-8 rounded text-[8px] flex items-center justify-center font-bold ${
-                              card?.type === 'white'
-                                ? 'bg-slate-200 text-slate-700'
-                                : 'bg-slate-700 text-white'
-                            }`}
+                            className="w-[40px] h-[50px] overflow-hidden"
                           >
-                            {card?.points}
+                            <div className="origin-top-left scale-[0.4]">
+                              <PuzzleCardDisplay
+                                card={card}
+                                size="xxs"
+                                placedPieces={wp.placedPieces}
+                                showReward={false}
+                                compact={true}
+                              />
+                            </div>
                           </div>
                         );
                       })}
                       {Array(4 - currentPlayer.workingPuzzles.length).fill(null).map((_, i) => (
-                        <div key={`empty-${i}`} className="w-6 h-8 rounded border border-dashed border-slate-500" />
+                        <div key={`empty-${i}`} className="w-[40px] h-[50px] rounded border border-dashed border-slate-500" />
                       ))}
                     </div>
                     {/* 完成枚数 */}
@@ -1592,21 +1597,26 @@ export const GamePlayPhase = ({
                       <div className="flex gap-1">
                         {player.workingPuzzles.map((wp) => {
                           const card = ALL_PUZZLES.find((p) => p.id === wp.cardId);
+                          if (!card) return null;
                           return (
                             <div
                               key={wp.cardId}
-                              className={`w-6 h-8 rounded text-[8px] flex items-center justify-center font-bold ${
-                                card?.type === 'white'
-                                  ? 'bg-slate-200 text-slate-700'
-                                  : 'bg-slate-700 text-white'
-                              }`}
+                              className="w-[40px] h-[50px] overflow-hidden"
                             >
-                              {card?.points}
+                              <div className="origin-top-left scale-[0.4]">
+                                <PuzzleCardDisplay
+                                  card={card}
+                                  size="xxs"
+                                  placedPieces={wp.placedPieces}
+                                  showReward={false}
+                                  compact={true}
+                                />
+                              </div>
                             </div>
                           );
                         })}
                         {Array(4 - player.workingPuzzles.length).fill(null).map((_, i) => (
-                          <div key={`empty-${i}`} className="w-6 h-8 rounded border border-dashed border-slate-500" />
+                          <div key={`empty-${i}`} className="w-[40px] h-[50px] rounded border border-dashed border-slate-500" />
                         ))}
                       </div>
                       {/* 完成枚数 */}
