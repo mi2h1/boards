@@ -1571,12 +1571,12 @@ export const GamePlayPhase = ({
               </div>
 
               {/* ピース一覧（1200px以下で非表示・1列表示） */}
-              <div className="relative flex-shrink-0 w-24 bg-slate-800/50 border border-slate-600 rounded-lg p-2 hidden xl:block">
+              <div className="relative flex-shrink-0 w-24 bg-slate-800/50 border border-slate-600 rounded-lg p-3 hidden xl:block">
                 <div className="space-y-2">
                   {[1, 2, 3, 4].map((level) => (
                     <div key={level} className="space-y-1">
                       <div className="text-slate-400 text-xs">Lv.{level}</div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 items-center">
                         {PIECES_BY_LEVEL[level].map((type) => (
                           <PieceDisplay key={type} type={type} size="sm" />
                         ))}
