@@ -260,12 +260,16 @@ export const GamePlayPhase = ({
       })) || [];
 
       let updatedPieces = [...player.pieces, ...returnedPieces];
-      if (rewardPieceType) {
+      let updatedPieceStock = { ...gameState.pieceStock };
+
+      // 報酬ピースをストックから取得（在庫があれば）
+      if (rewardPieceType && updatedPieceStock[rewardPieceType] > 0) {
         updatedPieces.push({
           id: `reward-${Date.now()}-${rewardPieceType}`,
           type: rewardPieceType,
           rotation: 0 as const,
         });
+        updatedPieceStock[rewardPieceType]--;
       }
 
       const updatedPlayers = gameState.players.map((p) => {
@@ -288,7 +292,7 @@ export const GamePlayPhase = ({
         return p;
       });
 
-      onUpdateGameState({ players: updatedPlayers });
+      onUpdateGameState({ players: updatedPlayers, pieceStock: updatedPieceStock });
       setCompletedPuzzleId(null);
       setPendingCompletion(null);
       setAnnouncement(`パズル完成！ +${points}pt`);
@@ -1343,11 +1347,21 @@ export const GamePlayPhase = ({
     // アクションが残っていない場合は無視
     if (currentPlayer.remainingActions <= 0) return;
 
+    // ストック確認
+    if (gameState.pieceStock.dot <= 0) {
+      setAnnouncement('レベル1ピースは在庫切れです');
+      return;
+    }
+
     const newPiece = {
       id: `piece-${Date.now()}-dot`,
       type: 'dot' as PieceType,
       rotation: 0 as const,
     };
+
+    // ストック減少
+    const updatedPieceStock = { ...gameState.pieceStock };
+    updatedPieceStock.dot--;
 
     // アクション消費とターン終了判定
     const newRemainingActions = currentPlayer.remainingActions - 1;
@@ -1379,6 +1393,7 @@ export const GamePlayPhase = ({
       players: updatedPlayers,
       currentPlayerIndex: nextPlayerIndex,
       currentTurnNumber: nextTurnNumber,
+      pieceStock: updatedPieceStock,
     };
 
     // 最終ラウンド終了チェック（フルターン終了時に判定）
@@ -1407,6 +1422,23 @@ export const GamePlayPhase = ({
 
     // アクションが残っていない場合は無視
     if (currentPlayer.remainingActions <= 0) return;
+
+    // 新しいピースのストック確認
+    if (gameState.pieceStock[newType] <= 0) {
+      setAnnouncement('そのピースは在庫切れです');
+      return;
+    }
+
+    // 古いピースのタイプを取得
+    const oldPiece = currentPlayer.pieces.find((p) => p.id === pieceChangeMode);
+    const oldType = oldPiece?.type;
+
+    // ストック更新（古いピースを返却、新しいピースを取得）
+    const updatedPieceStock = { ...gameState.pieceStock };
+    updatedPieceStock[newType]--;
+    if (oldType) {
+      updatedPieceStock[oldType]++;
+    }
 
     const updatedPieces = currentPlayer.pieces
       .filter((p) => p.id !== pieceChangeMode)
@@ -1449,6 +1481,7 @@ export const GamePlayPhase = ({
       players: updatedPlayers,
       currentPlayerIndex: nextPlayerIndex,
       currentTurnNumber: nextTurnNumber,
+      pieceStock: updatedPieceStock,
     };
 
     // 最終ラウンド終了チェック（フルターン終了時に判定）
@@ -2425,9 +2458,16 @@ export const GamePlayPhase = ({
                   {[1, 2, 3, 4].map((level) => (
                     <div key={level} className="space-y-1">
                       <div className="text-slate-400 text-xs">Lv.{level}</div>
-                      <div className="flex flex-col gap-1 items-center">
+                      <div className="flex flex-col gap-1">
                         {PIECES_BY_LEVEL[level].map((type) => (
-                          <PieceDisplay key={type} type={type} size="sm" />
+                          <div key={type} className="flex items-center gap-1">
+                            <PieceDisplay type={type} size="sm" />
+                            <span className={`text-xs min-w-[1.5rem] text-right ${
+                              gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
+                            }`}>
+                              ×{gameState.pieceStock[type]}
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>
