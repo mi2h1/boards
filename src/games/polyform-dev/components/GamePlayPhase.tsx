@@ -2130,6 +2130,7 @@ export const GamePlayPhase = ({
                         className="flex items-center gap-1 px-2 py-0.5 bg-slate-600 hover:bg-slate-500 rounded text-slate-300 text-xs transition-all"
                       >
                         <RotateCcw className="w-3 h-3" />
+                        <span>リセット</span>
                       </button>
                     )}
                     <span className="text-slate-500 text-sm">
@@ -2498,12 +2499,14 @@ export const GamePlayPhase = ({
             </div>
           </div>
 
-          {/* 右: 手持ちピース */}
-          <div className={`relative rounded-lg p-4 flex-1 min-w-0 transition-all border ${
-            actionMode === 'placePiece' || actionMode === 'pieceChange' || masterActionMode || (gameState.phase === 'finishing' && !currentPlayer.finishingDone)
-              ? 'bg-teal-800/30 border-teal-400 ring-2 ring-teal-400/30'
-              : 'bg-slate-800/50 border-slate-600'
-          }`}>
+          {/* 右カラム: 手持ちピース + ピースストック */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            {/* 手持ちピース */}
+            <div className={`relative rounded-lg p-4 transition-all border ${
+              actionMode === 'placePiece' || actionMode === 'pieceChange' || masterActionMode || (gameState.phase === 'finishing' && !currentPlayer.finishingDone)
+                ? 'bg-teal-800/30 border-teal-400 ring-2 ring-teal-400/30'
+                : 'bg-slate-800/50 border-slate-600'
+            }`}>
             {/* ピース変更選択モード：選択したピースの変更先一覧 */}
             {pieceChangeMode && selectedPiece && (
               <div className="rounded-lg p-3 mb-4 border bg-slate-700/50 border-teal-400">
@@ -2630,20 +2633,42 @@ export const GamePlayPhase = ({
                 ))}
               </div>
             </div>
-          </div>
-        </div>
+            </div>
 
-        {/* ピースストック一覧（2段レイアウト） */}
-        <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-3 mt-4">
-          <div className="flex flex-col gap-3">
-            {/* 1段目: Lv1 | Lv2 | Lv3 */}
-            <div className="flex gap-4 items-center justify-center">
-              {[1, 2, 3].map((level, index) => (
-                <div key={level} className="flex items-center gap-4">
+            {/* ピースストック一覧（2段レイアウト） */}
+            <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-3">
+              <div className="flex flex-col gap-2">
+                {/* 1段目: Lv1 | Lv2 | Lv3 */}
+                <div className="flex gap-4 items-center justify-center">
+                  {[1, 2, 3].map((level, index) => (
+                    <div key={level} className="flex items-center gap-4">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
+                        <div className="flex gap-1 items-end">
+                          {PIECES_BY_LEVEL[level].map((type) => (
+                            <div key={type} className="flex flex-col items-center">
+                              <div className="h-4 flex items-end">
+                                <PieceDisplay type={type} size="xs" />
+                              </div>
+                              <span className={`text-xs leading-tight ${
+                                gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
+                              }`}>
+                                {gameState.pieceStock[type]}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {index < 2 && <div className="w-px h-10 bg-slate-600" />}
+                    </div>
+                  ))}
+                </div>
+                {/* 2段目: Lv4 */}
+                <div className="flex justify-center">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
+                    <span className="text-slate-400 text-xs font-medium">Lv.4</span>
                     <div className="flex gap-1 items-end">
-                      {PIECES_BY_LEVEL[level].map((type) => (
+                      {PIECES_BY_LEVEL[4].map((type) => (
                         <div key={type} className="flex flex-col items-center">
                           <div className="h-4 flex items-end">
                             <PieceDisplay type={type} size="xs" />
@@ -2657,27 +2682,6 @@ export const GamePlayPhase = ({
                       ))}
                     </div>
                   </div>
-                  {index < 2 && <div className="w-px h-10 bg-slate-600" />}
-                </div>
-              ))}
-            </div>
-            {/* 2段目: Lv4 */}
-            <div className="flex justify-center">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-slate-400 text-xs font-medium">Lv.4</span>
-                <div className="flex gap-1 items-end">
-                  {PIECES_BY_LEVEL[4].map((type) => (
-                    <div key={type} className="flex flex-col items-center">
-                      <div className="h-4 flex items-end">
-                        <PieceDisplay type={type} size="xs" />
-                      </div>
-                      <span className={`text-xs leading-tight ${
-                        gameState.pieceStock[type] === 0 ? 'text-red-400' : 'text-slate-400'
-                      }`}>
-                        {gameState.pieceStock[type]}
-                      </span>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
