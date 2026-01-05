@@ -1227,7 +1227,7 @@ export const GamePlayPhase = ({
                     </div>
 
                     {/* 完成パズル一覧 */}
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5">
                       {completedPuzzles.length === 0 ? (
                         <div className="text-slate-500 text-xs">完成なし</div>
                       ) : (
@@ -1238,40 +1238,38 @@ export const GamePlayPhase = ({
                           const isRevealed = cardIndex <= revealedCardIndex;
 
                           return (
-                            <motion.div
+                            <div
                               key={cp.cardId}
-                              initial={{ rotateY: 180 }}
-                              animate={{ rotateY: isRevealed ? 0 : 180 }}
-                              transition={{ duration: 0.6, ease: 'easeOut' }}
-                              style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+                              className={`rounded-lg border-2 ${
+                                card.type === 'white'
+                                  ? 'border-slate-400 bg-slate-300/20'
+                                  : 'border-slate-500 bg-slate-600/20'
+                              }`}
+                              style={{
+                                width: CARD_SIZES.xxs.width + 4,
+                                height: CARD_SIZES.xxs.height + 4,
+                                padding: 2,
+                              }}
                             >
-                              {isRevealed ? (
-                                <div className="relative">
+                              <motion.div
+                                initial={{ rotateY: 90, opacity: 0 }}
+                                animate={{
+                                  rotateY: isRevealed ? 0 : 90,
+                                  opacity: isRevealed ? 1 : 0,
+                                }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                style={{ perspective: 1000 }}
+                              >
+                                {isRevealed && (
                                   <PuzzleCardDisplay
                                     card={card}
-                                    size="xs"
+                                    size="xxs"
                                     placedPieces={cp.placedPieces}
+                                    showReward={false}
                                   />
-                                  <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
-                                    +{card.points}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div
-                                  className={`rounded border-2 flex items-center justify-center ${
-                                    card.type === 'white'
-                                      ? 'bg-slate-200 border-slate-300'
-                                      : 'bg-slate-700 border-slate-600'
-                                  }`}
-                                  style={{
-                                    width: CARD_SIZES.xs.width,
-                                    height: CARD_SIZES.xs.height,
-                                  }}
-                                >
-                                  <span className="text-slate-500 text-2xl">?</span>
-                                </div>
-                              )}
-                            </motion.div>
+                                )}
+                              </motion.div>
+                            </div>
                           );
                         })
                       )}
