@@ -1229,7 +1229,7 @@ export const GamePlayPhase = ({
                     {/* 完成パズル一覧 */}
                     <div className="flex flex-col items-center gap-1.5">
                       {completedPuzzles.length === 0 ? (
-                        <div className="text-slate-500 text-xs">完成なし</div>
+                        <div className="text-slate-500 text-xs py-4">完成なし</div>
                       ) : (
                         completedPuzzles.map((cp, cardIndex) => {
                           const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
@@ -1238,38 +1238,25 @@ export const GamePlayPhase = ({
                           const isRevealed = cardIndex <= revealedCardIndex;
 
                           return (
-                            <div
+                            <motion.div
                               key={cp.cardId}
-                              className={`rounded-lg border-2 ${
-                                card.type === 'white'
-                                  ? 'border-slate-400 bg-slate-300/20'
-                                  : 'border-slate-500 bg-slate-600/20'
-                              }`}
-                              style={{
-                                width: CARD_SIZES.xxs.width + 4,
-                                height: CARD_SIZES.xxs.height + 4,
-                                padding: 2,
+                              initial={{ rotateY: 90, opacity: 0 }}
+                              animate={{
+                                rotateY: isRevealed ? 0 : 90,
+                                opacity: isRevealed ? 1 : 0,
                               }}
+                              transition={{ duration: 0.5, ease: 'easeOut' }}
+                              style={{ perspective: 1000 }}
                             >
-                              <motion.div
-                                initial={{ rotateY: 90, opacity: 0 }}
-                                animate={{
-                                  rotateY: isRevealed ? 0 : 90,
-                                  opacity: isRevealed ? 1 : 0,
-                                }}
-                                transition={{ duration: 0.5, ease: 'easeOut' }}
-                                style={{ perspective: 1000 }}
-                              >
-                                {isRevealed && (
-                                  <PuzzleCardDisplay
-                                    card={card}
-                                    size="xxs"
-                                    placedPieces={cp.placedPieces}
-                                    showReward={false}
-                                  />
-                                )}
-                              </motion.div>
-                            </div>
+                              {isRevealed && (
+                                <PuzzleCardDisplay
+                                  card={card}
+                                  size="xxs"
+                                  placedPieces={cp.placedPieces}
+                                  showReward={false}
+                                />
+                              )}
+                            </motion.div>
                           );
                         })
                       )}
