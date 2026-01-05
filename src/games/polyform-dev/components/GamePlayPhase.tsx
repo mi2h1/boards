@@ -83,12 +83,37 @@ export const GamePlayPhase = ({
   // アクションアナウンス
   const [announcement, setAnnouncement] = useState<string | null>(null);
 
-  // レベル変更選択モード
-  const [levelChangeMode, setLevelChangeMode] = useState<{
-    pieceId: string;
-    targetLevel: number;
-    direction: 'up' | 'down';
-  } | null>(null);
+  // ピース変更選択モード（選択中のピースID）
+  const [pieceChangeMode, setPieceChangeMode] = useState<string | null>(null);
+
+  // 変更可能なピース一覧を取得
+  const getAvailablePieceChanges = (pieceType: PieceType): { type: PieceType; category: 'up' | 'down' | 'same' }[] => {
+    const currentLevel = PIECE_DEFINITIONS[pieceType].level;
+    const result: { type: PieceType; category: 'up' | 'down' | 'same' }[] = [];
+
+    // レベルアップ（現在レベルが4未満の場合）
+    if (currentLevel < 4) {
+      PIECES_BY_LEVEL[currentLevel + 1].forEach((type) => {
+        result.push({ type, category: 'up' });
+      });
+    }
+
+    // 同レベル交換（自分以外）
+    PIECES_BY_LEVEL[currentLevel].forEach((type) => {
+      if (type !== pieceType) {
+        result.push({ type, category: 'same' });
+      }
+    });
+
+    // レベルダウン（現在レベルが1より大きい場合）
+    if (currentLevel > 1) {
+      PIECES_BY_LEVEL[currentLevel - 1].forEach((type) => {
+        result.push({ type, category: 'down' });
+      });
+    }
+
+    return result;
+  };
 
   // マスターアクションモード
   const [masterActionMode, setMasterActionMode] = useState(false);
@@ -102,7 +127,7 @@ export const GamePlayPhase = ({
   const [blackCardsTakenInFinalTurn, setBlackCardsTakenInFinalTurn] = useState(0);
 
   // 選択中のアクションモード
-  type ActionMode = 'none' | 'takePuzzle' | 'placePiece' | 'levelChange' | 'recycle' | 'masterAction';
+  type ActionMode = 'none' | 'takePuzzle' | 'placePiece' | 'pieceChange' | 'recycle' | 'masterAction';
   const [actionMode, setActionMode] = useState<ActionMode>('none');
 
   // レスポンシブカードサイズ（7段階）
@@ -777,7 +802,14 @@ export const GamePlayPhase = ({
       if (currentPlayer.finishingDone) return;
     } else {
       // 通常フェーズ：ピース配置モードまたはマスターアクション中でない場合は無視
-      if (actionMode !== 'placePiece' && actionMode !== 'levelChange' && !masterActionMode) return;
+      if (actionMode !== 'placePiece' && actionMode !== 'pieceChange' && !masterActionMode) return;
+    }
+
+    // ピース変更モードの場合：選択して変更先一覧を表示
+    if (actionMode === 'pieceChange') {
+      setSelectedPieceId(pieceId);
+      setPieceChangeMode(pieceId);
+      return;
     }
 
     setSelectedPieceId(pieceId);
@@ -1079,44 +1111,9 @@ export const GamePlayPhase = ({
     setAnnouncement('レベル1ピースを獲得');
   };
 
-  // レベルアップ開始
-  const handleStartLevelUp = () => {
-    if (!selectedPiece) return;
-    const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
-    if (currentLevel >= 4) return;
-
-    setLevelChangeMode({
-      pieceId: selectedPiece.id,
-      targetLevel: currentLevel + 1,
-      direction: 'up',
-    });
-  };
-
-  // レベルダウン開始
-  const handleStartLevelDown = () => {
-    if (!selectedPiece) return;
-    const currentLevel = PIECE_DEFINITIONS[selectedPiece.type].level;
-    if (currentLevel <= 1) return;
-
-    const targetLevel = currentLevel - 1;
-    const targetTypes = PIECES_BY_LEVEL[targetLevel];
-
-    // 選択肢が1つならそのまま確定
-    if (targetTypes.length === 1) {
-      handleConfirmLevelChange(targetTypes[0]);
-    } else {
-      setLevelChangeMode({
-        pieceId: selectedPiece.id,
-        targetLevel,
-        direction: 'down',
-      });
-    }
-  };
-
-  // レベル変更確定（新しいピースタイプを選択）
-  const handleConfirmLevelChange = (newType: PieceType) => {
-    const pieceId = levelChangeMode?.pieceId ?? selectedPiece?.id;
-    if (!pieceId || !onUpdateGameState) return;
+  // ピース変更確定（新しいピースタイプを選択）
+  const handleConfirmPieceChange = (newType: PieceType, category: 'up' | 'down' | 'same') => {
+    if (!pieceChangeMode || !onUpdateGameState) return;
 
     // 自分のターンでない場合は無視
     if (!isMyTurn) return;
@@ -1124,11 +1121,8 @@ export const GamePlayPhase = ({
     // アクションが残っていない場合は無視
     if (currentPlayer.remainingActions <= 0) return;
 
-    const targetLevel = levelChangeMode?.targetLevel ?? PIECE_DEFINITIONS[newType].level;
-    const direction = levelChangeMode?.direction ?? 'down';
-
     const updatedPieces = currentPlayer.pieces
-      .filter((p) => p.id !== pieceId)
+      .filter((p) => p.id !== pieceChangeMode)
       .concat({
         id: `piece-${Date.now()}-${newType}`,
         type: newType,
@@ -1156,11 +1150,14 @@ export const GamePlayPhase = ({
       return p;
     });
 
+    const targetLevel = PIECE_DEFINITIONS[newType].level;
+    const actionText = category === 'up' ? `Lv${targetLevel}にアップ` : category === 'down' ? `Lv${targetLevel}にダウン` : `Lv${targetLevel}の別ピースに交換`;
+
     onUpdateGameState({ players: updatedPlayers, currentPlayerIndex: nextPlayerIndex });
-    setLevelChangeMode(null);
+    setPieceChangeMode(null);
     setSelectedPieceId(null);
     setActionMode('none'); // アクション完了後にリセット
-    setAnnouncement(`レベル${targetLevel}に${direction === 'up' ? 'アップ' : 'ダウン'}`);
+    setAnnouncement(actionText);
   };
 
   // ドラッグ中のピース情報
@@ -1804,7 +1801,7 @@ export const GamePlayPhase = ({
                         ピース配置
                       </button>
                       <button
-                        onClick={() => setActionMode('levelChange')}
+                        onClick={() => setActionMode('pieceChange')}
                         disabled={currentPlayer.pieces.length === 0}
                         className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
                           currentPlayer.pieces.length === 0
@@ -1812,7 +1809,7 @@ export const GamePlayPhase = ({
                             : 'bg-slate-700 text-white hover:bg-slate-600'
                         }`}
                       >
-                        レベル変更
+                        ピース変更
                       </button>
                       <button
                         onClick={() => setActionMode('recycle')}
@@ -1856,11 +1853,15 @@ export const GamePlayPhase = ({
                     </div>
                   )}
 
-                  {actionMode === 'levelChange' && (
+                  {actionMode === 'pieceChange' && (
                     <div className="flex items-center justify-center gap-3">
-                      <span className="text-teal-300 text-sm">ピースを選んでUP/DOWNボタンを押してください</span>
+                      <span className="text-teal-300 text-sm">変更するピースを選んでください</span>
                       <button
-                        onClick={() => setActionMode('none')}
+                        onClick={() => {
+                          setActionMode('none');
+                          setPieceChangeMode(null);
+                          setSelectedPieceId(null);
+                        }}
                         className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded text-white text-sm"
                       >
                         キャンセル
@@ -2185,36 +2186,38 @@ export const GamePlayPhase = ({
 
           {/* 右: 手持ちピース */}
           <div className={`relative rounded-lg p-4 flex-1 min-w-0 transition-all border ${
-            actionMode === 'placePiece' || actionMode === 'levelChange' || masterActionMode || (gameState.phase === 'finishing' && !currentPlayer.finishingDone)
+            actionMode === 'placePiece' || actionMode === 'pieceChange' || masterActionMode || (gameState.phase === 'finishing' && !currentPlayer.finishingDone)
               ? 'bg-teal-800/30 border-teal-400 ring-2 ring-teal-400/30'
               : 'bg-slate-800/50 border-slate-600'
           }`}>
-            {/* レベル変更選択モード */}
-            {levelChangeMode && (
-              <div className={`rounded-lg p-3 mb-4 border ${
-                levelChangeMode.direction === 'up'
-                  ? 'bg-green-900/50 border-green-400'
-                  : 'bg-red-900/50 border-red-400'
-              }`}>
+            {/* ピース変更選択モード：選択したピースの変更先一覧 */}
+            {pieceChangeMode && selectedPiece && (
+              <div className="rounded-lg p-3 mb-4 border bg-slate-700/50 border-teal-400">
                 <div className="text-white text-sm mb-2">
-                  レベル{levelChangeMode.targetLevel}のピースを選択：
+                  Lv.{PIECE_DEFINITIONS[selectedPiece.type].level} → 変更先を選択：
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {PIECES_BY_LEVEL[levelChangeMode.targetLevel].map((type) => (
+                <div className="flex flex-wrap gap-1.5 items-center">
+                  {getAvailablePieceChanges(selectedPiece.type).map(({ type, category }) => (
                     <button
                       key={type}
-                      onClick={() => handleConfirmLevelChange(type)}
+                      onClick={() => handleConfirmPieceChange(type, category)}
                       className={`p-1.5 rounded ${
-                        levelChangeMode.direction === 'up'
+                        category === 'up'
                           ? 'bg-green-700 hover:bg-green-600'
+                          : category === 'same'
+                          ? 'bg-blue-700 hover:bg-blue-600'
                           : 'bg-red-700 hover:bg-red-600'
                       }`}
+                      title={category === 'up' ? 'アップグレード' : category === 'same' ? '同レベル交換' : 'ダウングレード'}
                     >
                       <PieceDisplay type={type} size="xs" />
                     </button>
                   ))}
                   <button
-                    onClick={() => setLevelChangeMode(null)}
+                    onClick={() => {
+                      setPieceChangeMode(null);
+                      setSelectedPieceId(null);
+                    }}
                     className="px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white text-xs"
                   >
                     キャンセル
@@ -2224,12 +2227,11 @@ export const GamePlayPhase = ({
             )}
 
             {/* 選択中のピースのコントロール */}
-            {selectedPiece && !levelChangeMode && (
+            {selectedPiece && !pieceChangeMode && (
               <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="text-white/60 text-sm">
-                    Lv.{PIECE_DEFINITIONS[selectedPiece.type].level}
-                    {actionMode === 'levelChange' ? ' UP/DOWNでレベル変更' : ' ドラッグして配置'}
+                    Lv.{PIECE_DEFINITIONS[selectedPiece.type].level} ドラッグして配置
                   </div>
                   <div className="flex gap-2">
                     {/* 回転・反転ボタン：ピース配置モード、マスターアクション中、または仕上げフェーズで表示 */}
@@ -2253,27 +2255,6 @@ export const GamePlayPhase = ({
                         </button>
                       </>
                     )}
-                    {/* UP/DOWNボタン：レベル変更モードのみ表示 */}
-                    {actionMode === 'levelChange' && (
-                      <>
-                        {PIECE_DEFINITIONS[selectedPiece.type].level < 4 && (
-                          <button
-                            onClick={handleStartLevelUp}
-                            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-white text-xs"
-                          >
-                            UP
-                          </button>
-                        )}
-                        {PIECE_DEFINITIONS[selectedPiece.type].level > 1 && (
-                          <button
-                            onClick={handleStartLevelDown}
-                            className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs"
-                          >
-                            DOWN
-                          </button>
-                        )}
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -2285,7 +2266,7 @@ export const GamePlayPhase = ({
                 const isFinishingPhase = gameState.phase === 'finishing';
                 const canInteract = isFinishingPhase
                   ? !currentPlayer.finishingDone // 仕上げフェーズ：完了していなければ操作可能
-                  : (actionMode === 'placePiece' || actionMode === 'levelChange' || masterActionMode);
+                  : (actionMode === 'placePiece' || actionMode === 'pieceChange' || masterActionMode);
                 return currentPlayer.pieces.map((piece) => (
                   <div
                     key={piece.id}
