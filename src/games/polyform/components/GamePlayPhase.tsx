@@ -477,10 +477,9 @@ export const GamePlayPhase = ({
     const isEndOfFullTurn = nextPlayerIndex === 0;
     const nextTurnNumber = isEndOfFullTurn ? gameState.currentTurnNumber + 1 : gameState.currentTurnNumber;
 
-    // 最終ラウンド判定：山札が尽きたか確認
+    // 最終ラウンド判定：黒パズルの山札が尽きたか確認
     const isBlackDeckEmpty = gameState.blackPuzzleDeck.length === 0;
-    const isWhiteDeckEmpty = gameState.whitePuzzleDeck.length === 0;
-    const shouldTriggerFinalRound = !gameState.finalRound && (isBlackDeckEmpty || isWhiteDeckEmpty);
+    const shouldTriggerFinalRound = !gameState.finalRound && isBlackDeckEmpty;
 
     // 最終ラウンド終了判定
     const shouldEndFinalRound =
@@ -700,8 +699,8 @@ export const GamePlayPhase = ({
       updates.phase = 'finishing';
       setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
     }
-    // 最終ラウンド開始チェック（山札が空になったら）
-    else if (!gameState.finalRound && deck.length === 0) {
+    // 最終ラウンド開始チェック（黒パズルの山札が空になったら）
+    else if (!gameState.finalRound && deckType === 'black' && deck.length === 0) {
       updates.finalRound = true;
       updates.finalRoundTurnNumber = gameState.currentTurnNumber;
       setAnnouncement('最終ラウンド！');
@@ -881,8 +880,8 @@ export const GamePlayPhase = ({
       updates.phase = 'finishing';
       setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
     }
-    // 最終ラウンド開始チェック（山札が空になったら）
-    else if (!gameState.finalRound && deck.length === 0) {
+    // 最終ラウンド開始チェック（黒パズルの山札が空になったら）
+    else if (!gameState.finalRound && puzzleType === 'black' && deck.length === 0) {
       updates.finalRound = true;
       updates.finalRoundTurnNumber = gameState.currentTurnNumber;
       setAnnouncement('最終ラウンド！');
