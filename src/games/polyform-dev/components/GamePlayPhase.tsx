@@ -1178,13 +1178,21 @@ export const GamePlayPhase = ({
 
   // 結果画面（ended フェーズ）
   if (gameState.phase === 'ended') {
-    // 全プレイヤーのスコアを計算してソート
+    // 全プレイヤーのスコアを計算
     const playerResults = gameState.players
       .map((player) => ({
         player,
         ...calculateFinalScore(player),
       }))
       .sort((a, b) => b.finalScore - a.finalScore);
+
+    // 表示順序：最初は元の順番、showFinalResults後は順位順
+    const displayPlayers = showFinalResults
+      ? playerResults.map((r) => r.player)
+      : gameState.players;
+
+    // カードの最小高さ（xxsカード: 125px）
+    const minRowHeight = 125;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
@@ -1197,22 +1205,29 @@ export const GamePlayPhase = ({
 
           {/* 各プレイヤーの完成パズル表示（縦に行で並ぶ） */}
           <div className="w-full max-w-5xl space-y-3 mb-6">
-            {gameState.players.map((player) => {
+            {displayPlayers.map((player) => {
               const result = playerResults.find((r) => r.player.id === player.id);
-              // 順位を計算
               const rank = playerResults.findIndex((r) => r.player.id === player.id) + 1;
               const completedPuzzles = player.completedPuzzles || [];
 
               return (
-                <div key={player.id} className="bg-slate-800/60 rounded-lg p-3">
-                  {/* プレイヤー名とスコア（左上） */}
-                  <div className="flex items-center gap-3 mb-2">
+                <motion.div
+                  key={player.id}
+                  layout
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  className="bg-slate-800/60 rounded-lg p-3 flex gap-4"
+                  style={{ minHeight: minRowHeight + 24 }} // カード高さ + padding
+                >
+                  {/* 左側：順位バッジ + 名前 + ポイント（縦中央揃え） */}
+                  <div className="w-28 flex-shrink-0 flex flex-col items-center justify-center">
+                    {/* 順位バッジ（名前の上に表示） */}
                     <AnimatePresence>
                       {showFinalResults && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm ${
+                          initial={{ opacity: 0, scale: 0.5, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={{ delay: 0.3 }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-1 ${
                             rank === 1
                               ? 'bg-yellow-400 text-yellow-900'
                               : rank === 2
@@ -1226,62 +1241,69 @@ export const GamePlayPhase = ({
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <div className="text-white font-bold">{player.name}</div>
+
+                    {/* プレイヤー名 */}
+                    <div className="text-white font-bold text-center">{player.name}</div>
+
+                    {/* ポイント（名前の下に表示） */}
                     <AnimatePresence>
                       {showFinalResults && result && (
                         <motion.div
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="text-amber-300 font-bold"
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
+                          className="text-center mt-1"
                         >
-                          {result.finalScore}pt
-                          <span className="text-slate-400 text-xs ml-1">
+                          <div className="text-amber-300 font-bold">{result.finalScore}pt</div>
+                          <div className="text-slate-400 text-xs">
                             ({result.completedScore}
                             {result.finishingPenalty > 0 && <span className="text-red-400">-{result.finishingPenalty}</span>}
                             {result.incompletePenalty > 0 && <span className="text-red-400">-{result.incompletePenalty}</span>})
-                          </span>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* 完成パズル一覧（横並び） */}
-                  <div className="flex flex-wrap gap-3">
-                    {completedPuzzles.length === 0 ? (
-                      <div className="text-slate-500 text-xs py-2">完成なし</div>
-                    ) : (
-                      completedPuzzles.map((cp, cardIndex) => {
-                        const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
-                        if (!card) return null;
+                  {/* 右側：完成パズル一覧（横並び、縦中央揃え） */}
+                  <div className="flex-1 flex items-center">
+                    <div className="flex flex-wrap gap-3">
+                      {completedPuzzles.length === 0 ? (
+                        <div className="text-slate-500 text-xs">完成なし</div>
+                      ) : (
+                        completedPuzzles.map((cp, cardIndex) => {
+                          const card = ALL_PUZZLES.find((p) => p.id === cp.cardId);
+                          if (!card) return null;
 
-                        const isRevealed = cardIndex <= revealedCardIndex;
+                          const isRevealed = cardIndex <= revealedCardIndex;
 
-                        return (
-                          <motion.div
-                            key={cp.cardId}
-                            initial={{ rotateY: 90, opacity: 0 }}
-                            animate={{
-                              rotateY: isRevealed ? 0 : 90,
-                              opacity: isRevealed ? 1 : 0,
-                            }}
-                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                            style={{ perspective: 1000 }}
-                          >
-                            {isRevealed && (
-                              <PuzzleCardDisplay
-                                card={card}
-                                size="xxs"
-                                placedPieces={cp.placedPieces}
-                                showReward={false}
-                                compact={true}
-                              />
-                            )}
-                          </motion.div>
-                        );
-                      })
-                    )}
+                          return (
+                            <motion.div
+                              key={cp.cardId}
+                              initial={{ rotateY: 90, opacity: 0 }}
+                              animate={{
+                                rotateY: isRevealed ? 0 : 90,
+                                opacity: isRevealed ? 1 : 0,
+                              }}
+                              transition={{ duration: 0.5, ease: 'easeOut' }}
+                              style={{ perspective: 1000 }}
+                            >
+                              {isRevealed && (
+                                <PuzzleCardDisplay
+                                  card={card}
+                                  size="xxs"
+                                  placedPieces={cp.placedPieces}
+                                  showReward={false}
+                                  compact={true}
+                                />
+                              )}
+                            </motion.div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
