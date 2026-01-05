@@ -85,7 +85,6 @@ export const DroppablePuzzleCard = ({
   const sizeConfig = CARD_SIZES[size];
   const cellPx = sizeConfig.cellPx;
   const cellSize = sizeConfig.cell;
-  const cardSize = `w-[${sizeConfig.width}px] h-[${sizeConfig.height}px]`;
 
   // 配置済みピースのセル情報を計算
   const placedCells: Map<string, { color: string; pieceId: string }> = new Map();
@@ -174,21 +173,25 @@ export const DroppablePuzzleCard = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
-      className={`${cardSize} flex flex-col rounded-lg p-4 transition-all bg-cover bg-center ${
+      className={`flex flex-col rounded-lg p-4 transition-all bg-cover bg-center ${
         selected ? 'ring-2 ring-teal-400 ring-offset-2 ring-offset-slate-900' : ''
       } ${completed ? 'ring-4 ring-green-400 shadow-lg shadow-green-400/50' : isComplete ? 'ring-2 ring-yellow-400' : ''} ${
         draggingPiece ? 'cursor-crosshair' : ''
       }`}
-      style={{ backgroundImage: `url(${cardImage})` }}
+      style={{
+        width: sizeConfig.width,
+        height: sizeConfig.height,
+        backgroundImage: `url(${cardImage})`
+      }}
     >
       {/* カード情報ヘッダー（固定高さ） */}
       <div className="flex items-center justify-between h-6 mb-2">
         <div
-          className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-            card.type === 'white' ? 'bg-slate-700 text-white' : 'bg-yellow-500 text-black'
+          className={`text-sm font-bold ${
+            card.type === 'white' ? 'text-slate-700' : 'text-yellow-500'
           }`}
         >
-          {card.points}pt
+          {card.points}
         </div>
         {card.rewardPieceType && (
           <PieceDisplay type={card.rewardPieceType} size="sm" />
