@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { RotateCw, FlipHorizontal, RotateCcw } from 'lucide-react';
+import { RotateCw, FlipHorizontal, RotateCcw, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieceDisplay, getTransformedShape } from './PieceDisplay';
 import { PuzzleCardDisplay, CARD_SIZES, type CardSizeType } from './PuzzleCardDisplay';
@@ -1526,9 +1526,47 @@ export const GamePlayPhase = ({
       <div className="min-h-screen bg-gradient-to-br from-teal-900 to-emerald-900">
         <div className="min-h-screen bg-black/20 p-4 flex flex-col items-center">
           {/* タイトル */}
-          <div className="text-center my-6 mb-10">
+          <div className="text-center my-6 mb-4">
             <img src="/boards/images/vec_logo_polyform.svg" alt="POLYFORM" className="h-8 mx-auto mb-2" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white">結果発表</h1>
+          </div>
+
+          {/* インフォエリア */}
+          <div className="h-12 flex items-center justify-center mb-6">
+            <AnimatePresence mode="wait">
+              {showFinalResults ? (
+                <motion.div
+                  key="winner"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-3"
+                >
+                  <Trophy className="w-8 h-8 text-yellow-400" />
+                  <span className="text-xl font-bold text-yellow-300">
+                    {playerResults[0]?.player.name}の勝利！
+                  </span>
+                </motion.div>
+              ) : showIncompletePuzzles ? (
+                <motion.div
+                  key="incomplete"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <span className="text-lg font-medium text-red-400">未完成パズル公開</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="completed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <span className="text-lg font-medium text-white">完成パズル 公開</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 各プレイヤーの完成パズル表示（縦に行で並ぶ） */}
