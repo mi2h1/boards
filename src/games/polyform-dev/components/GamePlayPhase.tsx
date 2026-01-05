@@ -2642,7 +2642,7 @@ export const GamePlayPhase = ({
                 <div className="flex gap-4 items-center justify-center">
                   {[1, 2, 3].map((level, index) => (
                     <div key={level} className="flex items-center gap-4">
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="flex flex-col items-center gap-2">
                         <span className="text-slate-400 text-xs font-medium">Lv.{level}</span>
                         <div className="flex gap-1 items-end">
                           {PIECES_BY_LEVEL[level].map((type) => (
@@ -2665,7 +2665,7 @@ export const GamePlayPhase = ({
                 </div>
                 {/* 2段目: Lv4 */}
                 <div className="flex justify-center">
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-2">
                     <span className="text-slate-400 text-xs font-medium">Lv.4</span>
                     <div className="flex gap-1 items-end">
                       {PIECES_BY_LEVEL[4].map((type) => (
