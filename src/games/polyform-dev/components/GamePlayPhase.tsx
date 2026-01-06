@@ -128,11 +128,25 @@ export const GamePlayPhase = ({
     });
 
     // レベルダウン（現在レベルが1より大きい場合）
-    // ダウングレードはスキップ不可（1つ下のレベルのみ）
+    // 1つ下のレベルが全て在庫切れの場合、さらに下のレベルも選択肢に追加
     if (currentLevel > 1) {
-      PIECES_BY_LEVEL[currentLevel - 1].forEach((type) => {
-        result.push({ type, category: 'down' });
-      });
+      let targetLevel = currentLevel - 1;
+      while (targetLevel >= 1) {
+        const piecesAtLevel = PIECES_BY_LEVEL[targetLevel];
+        const hasAnyInStock = piecesAtLevel.some((type) => gameState.pieceStock[type] > 0);
+
+        // このレベルのピースを選択肢に追加
+        piecesAtLevel.forEach((type) => {
+          result.push({ type, category: 'down' });
+        });
+
+        // このレベルに在庫があるピースがあれば、これ以上下は見ない
+        if (hasAnyInStock) {
+          break;
+        }
+        // 全て在庫切れなら、さらに下のレベルも選択肢に追加
+        targetLevel--;
+      }
     }
 
     return result;
