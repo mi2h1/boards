@@ -1652,7 +1652,7 @@ export const GamePlayPhase = ({
   };
 
   // ピース変更確定（新しいピースタイプを選択）
-  const handleConfirmPieceChange = (newType: PieceType, category: 'up' | 'down' | 'same') => {
+  const handleConfirmPieceChange = (newType: PieceType, _category: 'up' | 'down' | 'same') => {
     if (!pieceChangeMode || !onUpdateGameState) return;
 
     // 自分のターンでない場合は無視
@@ -1717,9 +1717,6 @@ export const GamePlayPhase = ({
       return p;
     });
 
-    const targetLevel = PIECE_DEFINITIONS[newType].level;
-    const actionText = category === 'up' ? `Lv${targetLevel}にアップ` : category === 'down' ? `Lv${targetLevel}にダウン` : `Lv${targetLevel}の別ピースに交換`;
-
     // ターン番号の計算
     const isEndOfFullTurn = turnEnded && nextPlayerIndex === 0;
     const nextTurnNumber = isEndOfFullTurn ? gameState.currentTurnNumber + 1 : gameState.currentTurnNumber;
@@ -1745,9 +1742,9 @@ export const GamePlayPhase = ({
       updates.announcement = logMessage;
       setAnnouncement(logMessage);
     } else {
-      logMessage = `${currentPlayer.name}が${actionText}`;
+      logMessage = `${currentPlayer.name}がピースを交換`;
       updates.announcement = logMessage;
-      setAnnouncement(actionText);
+      setAnnouncement('ピースを交換');
     }
     updates.actionLogs = createActionLog(logMessage);
 
