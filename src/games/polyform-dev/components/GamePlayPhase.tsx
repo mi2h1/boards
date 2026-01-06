@@ -7,7 +7,7 @@ import { DroppablePuzzleCard, isValidPlacement } from './DroppablePuzzleCard';
 import { DragOverlay } from './DraggablePiece';
 import { ALL_PUZZLES } from '../data/puzzles';
 import { PIECE_DEFINITIONS, PIECES_BY_LEVEL } from '../data/pieces';
-import type { GameState, WorkingPuzzle, PlacedPiece, PuzzleCard, PieceType, PieceInstance } from '../types/game';
+import type { GameState, WorkingPuzzle, PlacedPiece, PuzzleCard, PieceType, PieceInstance, ActionLog } from '../types/game';
 
 // CardSizeType → PieceDisplay用サイズへのマッピング
 const toPieceSize = (cardSize: CardSizeType): 'xs' | 'sm' | 'md' | 'lg' => {
@@ -92,6 +92,18 @@ export const GamePlayPhase = ({
     piece: PieceInstance;
     placedPiece: PlacedPiece;
   } | null>(null);
+
+  // アクションログを追加するヘルパー関数（最新20件を保持）
+  const createActionLog = (message: string): ActionLog[] => {
+    const newLog: ActionLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      message,
+      timestamp: Date.now(),
+    };
+    const currentLogs = gameState.actionLogs || [];
+    const updatedLogs = [...currentLogs, newLog].slice(-20); // 最新20件を保持
+    return updatedLogs;
+  };
 
   // 変更可能なピース一覧を取得
   const getAvailablePieceChanges = (pieceType: PieceType): { type: PieceType; category: 'up' | 'down' | 'same' }[] => {
@@ -859,10 +871,12 @@ export const GamePlayPhase = ({
     });
 
     // ゲーム状態を更新
+    const logMessage = `${currentPlayer.name}がリサイクル`;
     const updates: Partial<GameState> = {
       players: updatedPlayers,
       currentPlayerIndex: nextPlayerIndex,
-      announcement: `${currentPlayer.name}がリサイクル`,
+      announcement: logMessage,
+      actionLogs: createActionLog(logMessage),
     };
     if (recyclingMarket === 'white') {
       updates.whitePuzzleMarket = newMarket;
@@ -971,21 +985,26 @@ export const GamePlayPhase = ({
       gameState.finalRoundTurnNumber !== null &&
       nextTurnNumber > gameState.finalRoundTurnNumber + 1;
 
+    let logMessage: string;
     if (shouldEndFinalRound) {
       updates.phase = 'finishing';
-      updates.announcement = '最終ラウンド終了！仕上げフェーズへ';
-      setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+      logMessage = '最終ラウンド終了！仕上げフェーズへ';
+      updates.announcement = logMessage;
+      setAnnouncement(logMessage);
     }
     // 最終ラウンド開始チェック（黒パズルの山札が空になったら）
     else if (!gameState.finalRound && puzzleType === 'black' && deck.length === 0) {
       updates.finalRound = true;
       updates.finalRoundTurnNumber = gameState.currentTurnNumber;
-      updates.announcement = '最終ラウンド開始！';
-      setAnnouncement('最終ラウンド開始！');
+      logMessage = '最終ラウンド開始！';
+      updates.announcement = logMessage;
+      setAnnouncement(logMessage);
     } else {
-      updates.announcement = `${currentPlayer.name}がカードを取得`;
+      logMessage = `${currentPlayer.name}がカードを取得`;
+      updates.announcement = logMessage;
       setAnnouncement('カードを取得');
     }
+    updates.actionLogs = createActionLog(logMessage);
 
     // 新しいカードのIDを設定（フリップアニメーション用）
     setNewCardId(addedCardId);
@@ -1355,17 +1374,22 @@ export const GamePlayPhase = ({
       gameState.finalRoundTurnNumber !== null &&
       nextTurnNumber > gameState.finalRoundTurnNumber + 1;
 
+    let logMessage: string;
     if (shouldEndFinalRound) {
       updates.phase = 'finishing';
-      updates.announcement = '最終ラウンド終了！仕上げフェーズへ';
-      setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+      logMessage = '最終ラウンド終了！仕上げフェーズへ';
+      updates.announcement = logMessage;
+      setAnnouncement(logMessage);
     } else if (isCompleted) {
-      updates.announcement = `${currentPlayer.name}がパズル完成！ +${card.points}pt`;
+      logMessage = `${currentPlayer.name}がパズル完成！ +${card.points}pt`;
+      updates.announcement = logMessage;
       // setAnnouncementは下で実行
     } else {
-      updates.announcement = `${currentPlayer.name}がピースを配置`;
+      logMessage = `${currentPlayer.name}がピースを配置`;
+      updates.announcement = logMessage;
       // setAnnouncementは下で実行
     }
+    updates.actionLogs = createActionLog(logMessage);
 
     onUpdateGameState(updates);
 
@@ -1456,9 +1480,11 @@ export const GamePlayPhase = ({
         }
         return p;
       });
+      const logMessage = `${currentPlayer.name}がマスターアクション（${masterActionPendingCompletions.length}枚完成）`;
       onUpdateGameState({
         players: updatedPlayers,
-        announcement: `${currentPlayer.name}がマスターアクション（${masterActionPendingCompletions.length}枚完成）`,
+        announcement: logMessage,
+        actionLogs: createActionLog(logMessage),
       });
 
       // ターン遷移情報を保存（完成処理後に適用）
@@ -1503,14 +1529,18 @@ export const GamePlayPhase = ({
         currentTurnNumber: nextTurnNumber,
       };
 
+      let logMessage: string;
       if (shouldEndFinalRound) {
         updates.phase = 'finishing';
-        updates.announcement = '最終ラウンド終了！仕上げフェーズへ';
-        setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+        logMessage = '最終ラウンド終了！仕上げフェーズへ';
+        updates.announcement = logMessage;
+        setAnnouncement(logMessage);
       } else {
-        updates.announcement = `${currentPlayer.name}がマスターアクション（${masterActionPlacedPuzzles.size}枚に配置）`;
+        logMessage = `${currentPlayer.name}がマスターアクション（${masterActionPlacedPuzzles.size}枚に配置）`;
+        updates.announcement = logMessage;
         setAnnouncement(`マスターアクション完了（${masterActionPlacedPuzzles.size}枚に配置）`);
       }
+      updates.actionLogs = createActionLog(logMessage);
 
       onUpdateGameState(updates);
     }
@@ -1625,14 +1655,18 @@ export const GamePlayPhase = ({
       gameState.finalRoundTurnNumber !== null &&
       nextTurnNumber > gameState.finalRoundTurnNumber + 1;
 
+    let logMessage: string;
     if (shouldEndFinalRound) {
       updates.phase = 'finishing';
-      updates.announcement = '最終ラウンド終了！仕上げフェーズへ';
-      setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+      logMessage = '最終ラウンド終了！仕上げフェーズへ';
+      updates.announcement = logMessage;
+      setAnnouncement(logMessage);
     } else {
-      updates.announcement = `${currentPlayer.name}がレベル1ピースを獲得`;
+      logMessage = `${currentPlayer.name}がレベル1ピースを獲得`;
+      updates.announcement = logMessage;
       setAnnouncement('レベル1ピースを獲得');
     }
+    updates.actionLogs = createActionLog(logMessage);
 
     onUpdateGameState(updates);
   };
@@ -1724,14 +1758,18 @@ export const GamePlayPhase = ({
       gameState.finalRoundTurnNumber !== null &&
       nextTurnNumber > gameState.finalRoundTurnNumber + 1;
 
+    let logMessage: string;
     if (shouldEndFinalRound) {
       updates.phase = 'finishing';
-      updates.announcement = '最終ラウンド終了！仕上げフェーズへ';
-      setAnnouncement('最終ラウンド終了！仕上げフェーズへ');
+      logMessage = '最終ラウンド終了！仕上げフェーズへ';
+      updates.announcement = logMessage;
+      setAnnouncement(logMessage);
     } else {
-      updates.announcement = `${currentPlayer.name}が${actionText}`;
+      logMessage = `${currentPlayer.name}が${actionText}`;
+      updates.announcement = logMessage;
       setAnnouncement(actionText);
     }
+    updates.actionLogs = createActionLog(logMessage);
 
     onUpdateGameState(updates);
     setPieceChangeMode(null);
@@ -2221,6 +2259,21 @@ export const GamePlayPhase = ({
                     </div>
                   );
                 })}
+              </div>
+
+              {/* アクションログ */}
+              <div className="mt-3 bg-slate-800/50 border border-slate-600 rounded-lg p-2">
+                <div className="text-slate-400 text-xs mb-1">アクションログ</div>
+                <div className="h-24 overflow-y-auto text-xs space-y-0.5 scrollbar-thin scrollbar-thumb-slate-600">
+                  {(gameState.actionLogs || []).slice().reverse().map((log) => (
+                    <div key={log.id} className="text-slate-300 leading-tight">
+                      {log.message}
+                    </div>
+                  ))}
+                  {(!gameState.actionLogs || gameState.actionLogs.length === 0) && (
+                    <div className="text-slate-500 italic">まだログがありません</div>
+                  )}
+                </div>
               </div>
           </div>
 

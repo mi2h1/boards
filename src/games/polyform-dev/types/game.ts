@@ -86,6 +86,13 @@ export interface GameSettings {
   scoreVisibility: 'public' | 'hidden'; // 他プレイヤーのスコア表示（public: 常に表示、hidden: 終了時まで非表示）
 }
 
+// アクションログエントリ
+export interface ActionLog {
+  id: string;
+  message: string;
+  timestamp: number;
+}
+
 // ゲーム状態
 export interface GameState {
   phase: GamePhase;
@@ -113,6 +120,9 @@ export interface GameState {
 
   // アクションアナウンス（他プレイヤーに通知）
   announcement?: string;
+
+  // アクションログ（最新20件を保持）
+  actionLogs?: ActionLog[];
 
   // タイムスタンプ
   createdAt: number;
