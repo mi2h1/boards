@@ -139,6 +139,11 @@ export const GamePlayPhase = ({
   }[]>([]);
   // マスターアクション完了後の完成処理中フラグ
   const [isProcessingMasterCompletions, setIsProcessingMasterCompletions] = useState(false);
+  // マスターアクション処理中に保持するプレイヤー状態（Firebase反映前に上書きされないように）
+  const masterCompletionPreservedState = useRef<{
+    remainingActions: number;
+    usedMasterAction: boolean;
+  } | null>(null);
   // マスターアクション完了後のターン遷移情報（完成処理後に適用）
   const [pendingTurnTransition, setPendingTurnTransition] = useState<{
     nextPlayerIndex: number;
@@ -253,6 +258,8 @@ export const GamePlayPhase = ({
 
     const timer = setTimeout(() => {
       const { puzzleId, puzzleType, points, rewardPieceType } = pendingCompletion;
+      // マスターアクション処理中の場合、refから保持した値を取得
+      const preservedState = masterCompletionPreservedState.current;
 
       // スコア加算、報酬ピース付与、パズル削除、完成枚数カウント
       const player = gameState.players.find((p) => p.id === debugControlPlayerId);
@@ -288,8 +295,13 @@ export const GamePlayPhase = ({
             ? { cardId: puzzleId, placedPieces: [...completedPuzzle.placedPieces] }
             : { cardId: puzzleId, placedPieces: [] };
 
+          // マスターアクション処理中の場合、保持された値を使用
+          // （handleCompleteMasterActionで設定された値がFirebase反映前に上書きされないように）
           return {
             ...p,
+            // 保持された値があればそれを使用、なければ現在値を維持
+            remainingActions: preservedState ? preservedState.remainingActions : p.remainingActions,
+            usedMasterAction: preservedState ? preservedState.usedMasterAction : p.usedMasterAction,
             score: p.score + points,
             pieces: updatedPieces,
             workingPuzzles: p.workingPuzzles.filter((wp) => wp.cardId !== puzzleId),
@@ -334,15 +346,22 @@ export const GamePlayPhase = ({
     } else {
       // 全て処理完了 - ターン遷移を適用
       setIsProcessingMasterCompletions(false);
+      // 保持した状態を取得してからクリア（ターン遷移で使用）
+      const preservedState = masterCompletionPreservedState.current;
+      masterCompletionPreservedState.current = null;
 
       if (pendingTurnTransition && onUpdateGameState) {
         const { nextPlayerIndex, nextTurnNumber, shouldEndFinalRound } = pendingTurnTransition;
         const nextPlayerId = gameState.playerOrder[nextPlayerIndex];
 
-        // 次のプレイヤーのアクションを3に設定
+        // 次のプレイヤーのアクションを3に設定、現在のプレイヤーの状態も保持
         const updatedPlayers = gameState.players.map((p) => {
           if (p.id === nextPlayerId) {
             return { ...p, remainingActions: 3, usedMasterAction: false };
+          }
+          // 現在のプレイヤーの場合、保持した状態を使用（Firebase反映前の上書き防止）
+          if (p.id === debugControlPlayerId && preservedState) {
+            return { ...p, remainingActions: preservedState.remainingActions, usedMasterAction: preservedState.usedMasterAction };
           }
           return p;
         });
@@ -785,7 +804,11 @@ export const GamePlayPhase = ({
     const newMarket = deck.splice(0, 4);
 
     // アクション消費とターン終了判定
-    const newRemainingActions = currentPlayer.remainingActions - 1;
+    // マスターアクション処理後にFirebase反映前の場合、保持した値を使用
+    const currentRemainingActions = masterCompletionPreservedState.current
+      ? masterCompletionPreservedState.current.remainingActions
+      : currentPlayer.remainingActions;
+    const newRemainingActions = currentRemainingActions - 1;
     const nextPlayerIndex = newRemainingActions <= 0
       ? (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length
       : gameState.currentPlayerIndex;
@@ -793,10 +816,14 @@ export const GamePlayPhase = ({
 
     const updatedPlayers = gameState.players.map((p) => {
       if (p.id === debugControlPlayerId) {
-        return { ...p, remainingActions: newRemainingActions <= 0 ? 0 : newRemainingActions };
+        // マスターアクション処理後の場合、usedMasterActionも保持
+        const currentUsedMasterAction = masterCompletionPreservedState.current
+          ? masterCompletionPreservedState.current.usedMasterAction
+          : p.usedMasterAction;
+        return { ...p, remainingActions: newRemainingActions <= 0 ? 0 : newRemainingActions, usedMasterAction: currentUsedMasterAction };
       }
       if (newRemainingActions <= 0 && p.id === nextPlayerId) {
-        return { ...p, remainingActions: 3 };
+        return { ...p, remainingActions: 3, usedMasterAction: false };
       }
       return p;
     });
@@ -857,7 +884,11 @@ export const GamePlayPhase = ({
     };
 
     // アクション消費とターン終了判定
-    const newRemainingActions = currentPlayer.remainingActions - 1;
+    // マスターアクション処理後にFirebase反映前の場合、保持した値を使用
+    const currentRemainingActions = masterCompletionPreservedState.current
+      ? masterCompletionPreservedState.current.remainingActions
+      : currentPlayer.remainingActions;
+    const newRemainingActions = currentRemainingActions - 1;
     const turnEnded = newRemainingActions <= 0;
     const nextPlayerIndex = turnEnded
       ? (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length
@@ -870,10 +901,15 @@ export const GamePlayPhase = ({
 
     const updatedPlayers = gameState.players.map((p) => {
       if (p.id === debugControlPlayerId) {
+        // マスターアクション処理後の場合、usedMasterActionも保持
+        const currentUsedMasterAction = masterCompletionPreservedState.current
+          ? masterCompletionPreservedState.current.usedMasterAction
+          : p.usedMasterAction;
         return {
           ...p,
           workingPuzzles: [...p.workingPuzzles, newWorkingPuzzle],
           remainingActions: turnEnded ? 0 : newRemainingActions,
+          usedMasterAction: currentUsedMasterAction,
         };
       }
       if (turnEnded && p.id === nextPlayerId) {
@@ -1390,6 +1426,11 @@ export const GamePlayPhase = ({
         });
       }
 
+      // マスターアクション処理中の状態を保持（全completionで共有）
+      masterCompletionPreservedState.current = {
+        remainingActions: turnEnded ? 0 : newRemainingActions,
+        usedMasterAction: true,
+      };
       setIsProcessingMasterCompletions(true);
       // 最初の完成を処理開始
       const firstCompletion = masterActionPendingCompletions[0];
@@ -1490,7 +1531,11 @@ export const GamePlayPhase = ({
     updatedPieceStock.dot -= 1;
 
     // アクション消費とターン終了判定
-    const newRemainingActions = currentPlayer.remainingActions - 1;
+    // マスターアクション処理後にFirebase反映前の場合、保持した値を使用
+    const currentRemainingActions = masterCompletionPreservedState.current
+      ? masterCompletionPreservedState.current.remainingActions
+      : currentPlayer.remainingActions;
+    const newRemainingActions = currentRemainingActions - 1;
     const turnEnded = newRemainingActions <= 0;
     const nextPlayerIndex = turnEnded
       ? (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length
@@ -1503,10 +1548,15 @@ export const GamePlayPhase = ({
 
     const updatedPlayers = gameState.players.map((p) => {
       if (p.id === debugControlPlayerId) {
+        // マスターアクション処理後の場合、usedMasterActionも保持
+        const currentUsedMasterAction = masterCompletionPreservedState.current
+          ? masterCompletionPreservedState.current.usedMasterAction
+          : p.usedMasterAction;
         return {
           ...p,
           pieces: [...p.pieces, newPiece],
           remainingActions: turnEnded ? 0 : newRemainingActions,
+          usedMasterAction: currentUsedMasterAction,
         };
       }
       if (turnEnded && p.id === nextPlayerId) {
@@ -1575,7 +1625,11 @@ export const GamePlayPhase = ({
     updatedPieceStock[newType] -= 1;
 
     // アクション消費とターン終了判定
-    const newRemainingActions = currentPlayer.remainingActions - 1;
+    // マスターアクション処理後にFirebase反映前の場合、保持した値を使用
+    const currentRemainingActions = masterCompletionPreservedState.current
+      ? masterCompletionPreservedState.current.remainingActions
+      : currentPlayer.remainingActions;
+    const newRemainingActions = currentRemainingActions - 1;
     const turnEnded = newRemainingActions <= 0;
     const nextPlayerIndex = turnEnded
       ? (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length
@@ -1588,10 +1642,15 @@ export const GamePlayPhase = ({
 
     const updatedPlayers = gameState.players.map((p) => {
       if (p.id === debugControlPlayerId) {
+        // マスターアクション処理後の場合、usedMasterActionも保持
+        const currentUsedMasterAction = masterCompletionPreservedState.current
+          ? masterCompletionPreservedState.current.usedMasterAction
+          : p.usedMasterAction;
         return {
           ...p,
           pieces: updatedPieces,
           remainingActions: turnEnded ? 0 : newRemainingActions,
+          usedMasterAction: currentUsedMasterAction,
         };
       }
       if (turnEnded && p.id === nextPlayerId) {
@@ -2307,7 +2366,7 @@ export const GamePlayPhase = ({
                           >
                             リサイクル
                           </button>
-                          {!currentPlayer.usedMasterAction && currentPlayer.workingPuzzles.length > 0 && (
+                          {!currentPlayer.usedMasterAction && !isProcessingMasterCompletions && currentPlayer.workingPuzzles.length > 0 && (
                             <button
                               onClick={handleStartMasterAction}
                               className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm font-medium transition-all"
