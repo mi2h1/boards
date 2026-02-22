@@ -22,7 +22,7 @@ const TILE_SPACING = TILE_W + 0.008;
 const HAND_Z = 2.3;
 const RIVER_Z = 0.97;
 const RIVER_COLS = 6; // 河の1行あたりの枚数
-const RIVER_ROW_SPACING = TILE_W + 0.02; // 行間（奥方向）
+const RIVER_ROW_SPACING = TILE_H + 0.02; // 行間（牌を寝かせた時の高さ分）
 
 // 河の牌位置を計算（左詰め、6枚で折り返し）
 const getRiverPosition = (index: number): [number, number, number] => {
@@ -389,6 +389,7 @@ interface TableSceneProps {
   isMyTurn?: boolean;
   turnPhase?: TurnPhase;
   onTileHover?: (tileId: string | null) => void;
+  dealProgress?: number | null;
   highQuality?: boolean;
 }
 
@@ -413,6 +414,7 @@ export const TableScene = ({
   isMyTurn,
   turnPhase,
   onTileHover,
+  dealProgress = null,
   highQuality = false,
 }: TableSceneProps = {}) => {
   const feltTexture = useMemo(() => createFeltTexture(), []);
@@ -495,15 +497,20 @@ export const TableScene = ({
         // 実データモード
         (() => {
           const seatedPlayers = getRelativeSeatOrder(gameState.players, playerId);
+          const numPlayers = seatedPlayers.length;
           return seatedPlayers.map((player, seatIdx) => {
             const isSelf = seatIdx === 0;
             const rotY = PLAYERS[seatIdx]?.rotY ?? 0;
-            // 自分の手牌がクリック可能か（自分の手番 + discardフェーズ + 6枚）
-            const canClick = isSelf && isMyTurn && turnPhase === 'discard' && player.hand.length === 6;
+            // 配牌演出中の表示枚数
+            const visibleCount = dealProgress == null
+              ? player.hand.length
+              : Math.min(player.hand.length, Math.floor(dealProgress / numPlayers) + (dealProgress % numPlayers > seatIdx ? 1 : 0));
+            // 自分の手牌がクリック可能か（自分の手番 + discardフェーズ + 6枚 + 配牌完了）
+            const canClick = isSelf && isMyTurn && turnPhase === 'discard' && player.hand.length === 6 && dealProgress == null;
             return (
               <group key={player.id} rotation={[0, rotY, 0]}>
                 {/* 手牌 */}
-                {player.hand.map((tile, i) => {
+                {player.hand.slice(0, visibleCount).map((tile, i) => {
                   const tsumoGap = (isSelf && player.hand.length === 6 && i === 5) ? 0.1 : 0;
                   const lx = (i - (player.hand.length - 1) / 2) * TILE_SPACING + tsumoGap;
                   const isHovered = hoveredTileId === tile.id;

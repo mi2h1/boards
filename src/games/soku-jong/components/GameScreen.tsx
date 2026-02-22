@@ -170,6 +170,34 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
   const [ronInfo, setRonInfo] = useState<{ score: ScoreResult } | null>(null);
   const processingRef = useRef(false);
 
+  // 配牌アニメーション
+  const [dealProgress, setDealProgress] = useState<number | null>(null);
+  const dealtRoundRef = useRef<number>(0);
+  const isDealing = dealProgress !== null;
+
+  useEffect(() => {
+    const allDiscardsEmpty = gameState.players.every(p => p.discards.length === 0);
+    if (!allDiscardsEmpty || dealtRoundRef.current === gameState.round) return;
+
+    dealtRoundRef.current = gameState.round;
+    const totalTiles = gameState.players.length * 5;
+    setDealProgress(0);
+
+    let current = 0;
+    const timer = setInterval(() => {
+      current++;
+      if (current >= totalTiles) {
+        setDealProgress(null);
+        clearInterval(timer);
+      } else {
+        setDealProgress(current);
+      }
+    }, 120);
+
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.round]);
+
   // 持ち時間管理
   const timeLimitSeconds = gameState.settings.timeLimitSeconds;
   const hasTimeLimit = timeLimitSeconds > 0;
@@ -228,7 +256,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
   // === Draw phase（自分の手番 or botの手番）===
   // ================================================================
   useEffect(() => {
-    if (turnPhase !== 'draw' || processingRef.current) return;
+    if (turnPhase !== 'draw' || processingRef.current || isDealing) return;
     if (!currentTurnId) return;
     if (!isMyTurn && !isBotTurn) return;
 
@@ -281,7 +309,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
   // === Bot auto-discard（botのdiscardフェーズ → ツモ切り）===
   // ================================================================
   useEffect(() => {
-    if (!isBotTurn || turnPhase !== 'discard' || processingRef.current) return;
+    if (!isBotTurn || turnPhase !== 'discard' || processingRef.current || isDealing) return;
     if (!currentTurnId) return;
 
     const bot = gameState.players.find((p) => p.id === currentTurnId);
@@ -305,7 +333,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
   // === Ron check（自分・bot・他プレイヤーのロン判定）===
   // ================================================================
   useEffect(() => {
-    if (turnPhase !== 'ron_check' || processingRef.current) return;
+    if (turnPhase !== 'ron_check' || processingRef.current || isDealing) return;
 
     const candidates = checkRonCandidates(gameState);
     const discarderId = gameState.lastDiscardPlayerId;
@@ -462,6 +490,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
               isMyTurn={isMyTurn}
               turnPhase={turnPhase}
               onTileHover={handleTileHover}
+              dealProgress={dealProgress}
               highQuality={highQuality}
             />
           </Suspense>
@@ -481,7 +510,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
         </Canvas>
 
         {/* 待ち牌パネル（2D、手牌の上に表示） */}
-        {displayWaitingTiles.length > 0 && !roundResult && (
+        {displayWaitingTiles.length > 0 && !roundResult && !isDealing && (
           <div className="absolute bottom-[28%] left-1/2 -translate-x-1/2 z-10">
             <div className="bg-black/80 rounded-lg px-3 py-2 flex items-center gap-2 border border-slate-600/50">
               <span className="text-amber-400 text-xs font-bold shrink-0">待ち</span>
@@ -502,7 +531,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
 
         {/* アクションボタン（2D、チケット風） */}
         {!roundResult && (canTsumo || ronInfo) && (
-          <div className="absolute bottom-[16%] left-1/2 -translate-x-1/2 z-10 flex gap-3">
+          <div className="absolute bottom-[34%] right-[18%] z-10 flex gap-3">
             {canTsumo && isMyTurn && (
               <button onClick={handleTsumo} className="ticket-btn ticket-btn-red">
                 ツモ
