@@ -81,6 +81,28 @@
   - 招待リンクの下を2カラムに分割（左: 参加者一覧、右: 持ち時間設定）
 - **仕様書更新:** soku-jong-spec.md を v2.0 に改訂
 
+### UI改善 第2弾 (2026-02-23)
+- **河の行間修正:** `RIVER_ROW_SPACING` を `TILE_H + 0.02`（0.32）に変更（牌の被り解消）
+- **アクションボタンの2D化:**
+  - 3Dメッシュボタン → 2Dオーバーレイ（チケット風デザイン）に変更
+  - CSS mask で四隅凹みノッチ（風パネルと同様のデザイン）
+  - YujiSyuku フォント（局数表示と統一）
+  - `::after` で内側ボーダー
+  - 配置を右上寄せ（`bottom-[34%] right-[18%]`）
+- **ホバー時の待ち牌プレビュー:**
+  - 手牌6枚時、各牌にマウスオンするとその牌を切った場合の待ち牌を表示
+  - `previewWaitingTiles` で仮想手牌から `findWaitingTiles` を実行
+- **配牌アニメーション:**
+  - 局開始時、120ms間隔でラウンドロビン配牌（1枚ずつ表示）
+  - `dealProgress` 状態で表示枚数を制御（`hand.slice(0, visibleCount)`）
+  - 配牌完了まで全ゲームループを `isDealing` ガードで抑止
+- **カメラ固定:** OrbitControls を削除（マウス操作によるカメラ移動を無効化）
+- **手番順の確認:** 反時計回り（右→対面→左→自分）= `+1` で正しいことを確認
+- **高速打牌時のゲーム停止バグ修正:**
+  - 原因: Draw phase の `processingRef` が200msタイムアウトでロック中に打牌→ron_check がブロック
+  - 修正: 自分のターンでは `processingRef` を即座にリセット、bot処理のみタイムアウト維持
+- **仕様書更新:** soku-jong-spec.md を v2.1 に改訂
+
 ### Phase 4: 切断・再接続対応 — 未着手
 - 切断プレイヤーの自動ツモ切り（3秒タイムアウト）
 - ロン見逃し自動処理
@@ -118,7 +140,7 @@ turnPhase='draw' → processDraw() → turnPhase='discard'（canTsumoならツ�
 | `hooks/useRoom.ts` | Firebase連携（ルーム管理・プレゼンス・状態同期） |
 | `components/Lobby.tsx` | ロビー画面（ルーム作成/参加・2カラム設定） |
 | `components/GameScreen.tsx` | ゲーム操作ハブ（ループ・持ち時間・bot・結果モーダル・待ち牌パネル） |
-| `components/TableScene.tsx` | 3Dシーン（卓・牌配置・ボタン） |
+| `components/TableScene.tsx` | 3Dシーン（卓・牌配置・配牌表示制御） |
 | `components/TileModel.tsx` | 牌3Dモデル（テクスチャ・マテリアル・クリック/ホバー） |
 | `SokuJongGame.tsx` | ゲーム全体管理（フェーズ分岐・結果画面） |
 
