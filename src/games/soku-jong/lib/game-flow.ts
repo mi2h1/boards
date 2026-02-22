@@ -140,9 +140,9 @@ export function checkRonCandidates(
 
   const candidates: { playerId: string; score: ScoreResult }[] = [];
 
-  // 頭ハネ順: 打牌者の次の席から順に
+  // 頭ハネ順: 打牌者の反時計回りで次の席から順に
   for (let offset = 1; offset < playerCount; offset++) {
-    const idx = (discarderIndex + offset) % playerCount;
+    const idx = (discarderIndex - offset + playerCount) % playerCount;
     const player = gameState.players[idx];
 
     if (canRon(player, gameState.lastDiscard, gameState.doraTile)) {
@@ -234,7 +234,7 @@ export function getNextTurnPlayerId(
   currentId: string,
 ): string {
   const currentIndex = players.findIndex((p) => p.id === currentId);
-  const nextIndex = (currentIndex + 1) % players.length;
+  const nextIndex = (currentIndex - 1 + players.length) % players.length;
   return players[nextIndex].id;
 }
 

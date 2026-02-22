@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { OrbitControls, Text, Environment } from '@react-three/drei';
+import { Text, Environment } from '@react-three/drei';
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Shape, Path, ExtrudeGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { TileModel } from './TileModel';
@@ -737,7 +737,7 @@ export const TableScene = ({
         </>
       )}
 
-      <OrbitControls makeDefault target={[0, 0, 0.4]} />
+      {/* カメラ固定（操作なし） */}
     </>
   );
 };
