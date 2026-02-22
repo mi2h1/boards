@@ -4,7 +4,6 @@ import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Shape, Path, ExtrudeGeom
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { TileModel } from './TileModel';
 import type { TileKind, GameState, TurnPhase } from '../types/game';
-import type { ScoreResult } from '../lib/scoring';
 
 const FONT_YUJI = '/hive/fonts/YujiSyuku-Regular.ttf';
 const FONT_DIGI = '/hive/fonts/DS-DIGI.TTF';
@@ -387,13 +386,9 @@ interface TableSceneProps {
   gameState?: GameState;
   playerId?: string;
   onDiscard?: (tileId: string) => void;
-  canTsumo?: boolean;
-  onTsumo?: () => void;
-  ronInfo?: { score: ScoreResult } | null;
-  onRon?: () => void;
-  onSkipRon?: () => void;
   isMyTurn?: boolean;
   turnPhase?: TurnPhase;
+  onTileHover?: (tileId: string | null) => void;
   highQuality?: boolean;
 }
 
@@ -415,13 +410,9 @@ export const TableScene = ({
   gameState,
   playerId,
   onDiscard,
-  canTsumo,
-  onTsumo,
-  ronInfo,
-  onRon,
-  onSkipRon,
   isMyTurn,
   turnPhase,
+  onTileHover,
   highQuality = false,
 }: TableSceneProps = {}) => {
   const feltTexture = useMemo(() => createFeltTexture(), []);
@@ -431,13 +422,15 @@ export const TableScene = ({
 
   const handleTilePointerOver = useCallback((tileId: string) => {
     setHoveredTileId(tileId);
+    onTileHover?.(tileId);
     document.body.style.cursor = 'pointer';
-  }, []);
+  }, [onTileHover]);
 
   const handleTilePointerOut = useCallback(() => {
     setHoveredTileId(null);
+    onTileHover?.(null);
     document.body.style.cursor = 'auto';
-  }, []);
+  }, [onTileHover]);
 
   return (
     <>
@@ -734,73 +727,6 @@ export const TableScene = ({
               />
             </group>
           )}
-        </>
-      )}
-
-      {/* ツモボタン（自分の手番 + canTsumo） */}
-      {canTsumo && isMyTurn && onTsumo && (
-        <group position={[0.6, 0.6, 2.0]}>
-          <mesh onClick={(e) => { e.stopPropagation(); onTsumo(); }}
-            onPointerOver={() => { document.body.style.cursor = 'pointer'; }}
-            onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-          >
-            <boxGeometry args={[0.6, 0.25, 0.08]} />
-            <meshStandardMaterial color="#cc3333" emissive="#cc3333" emissiveIntensity={0.4} roughness={0.5} />
-          </mesh>
-          <Text
-            position={[0, 0, 0.045]}
-            fontSize={0.12}
-            font={FONT_YUJI}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            ツモ
-          </Text>
-        </group>
-      )}
-
-      {/* ロンボタン + スキップボタン */}
-      {ronInfo && onRon && onSkipRon && (
-        <>
-          <group position={[0.5, 0.6, 2.0]}>
-            <mesh onClick={(e) => { e.stopPropagation(); onRon(); }}
-              onPointerOver={() => { document.body.style.cursor = 'pointer'; }}
-              onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-            >
-              <boxGeometry args={[0.6, 0.25, 0.08]} />
-              <meshStandardMaterial color="#cc3333" emissive="#cc3333" emissiveIntensity={0.4} roughness={0.5} />
-            </mesh>
-            <Text
-              position={[0, 0, 0.045]}
-              fontSize={0.12}
-              font={FONT_YUJI}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-            >
-              ロン
-            </Text>
-          </group>
-          <group position={[-0.5, 0.6, 2.0]}>
-            <mesh onClick={(e) => { e.stopPropagation(); onSkipRon(); }}
-              onPointerOver={() => { document.body.style.cursor = 'pointer'; }}
-              onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-            >
-              <boxGeometry args={[0.6, 0.25, 0.08]} />
-              <meshStandardMaterial color="#555555" roughness={0.5} />
-            </mesh>
-            <Text
-              position={[0, 0, 0.045]}
-              fontSize={0.1}
-              font={FONT_YUJI}
-              color="#cccccc"
-              anchorX="center"
-              anchorY="middle"
-            >
-              見逃し
-            </Text>
-          </group>
         </>
       )}
 

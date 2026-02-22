@@ -139,7 +139,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
   const isBotTurn = currentTurnId ? isBot(currentTurnId) : false;
   const turnPhase = gameState.turnPhase;
 
-  // 待ち牌（テンパイ時に手牌の右に表示）
+  // 待ち牌（テンパイ時に表示）
   const me = gameState.players.find((p) => p.id === playerId);
   const myHandKey = me?.hand.map(t => t.id).join(',') ?? '';
   const waitingTiles: TileKind[] = useMemo(() => {
@@ -147,6 +147,22 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
     return findWaitingTiles(me.hand, gameState.doraTile, me.isDealer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myHandKey, gameState.doraTile, me?.isDealer]);
+
+  // ホバー時の待ち牌プレビュー（6枚時、各牌を切った場合の待ちを表示）
+  const [hoveredTileId, setHoveredTileId] = useState<string | null>(null);
+  const handleTileHover = useCallback((tileId: string | null) => {
+    setHoveredTileId(tileId);
+  }, []);
+
+  const previewWaitingTiles: TileKind[] = useMemo(() => {
+    if (!me || me.hand.length !== 6 || !hoveredTileId) return [];
+    const remaining = me.hand.filter(t => t.id !== hoveredTileId);
+    if (remaining.length !== 5) return [];
+    return findWaitingTiles(remaining, gameState.doraTile, me.isDealer);
+  }, [me, hoveredTileId, gameState.doraTile]);
+
+  // 表示用: 5枚テンパイ時 or 6枚ホバー時のプレビュー
+  const displayWaitingTiles = me?.hand.length === 6 && hoveredTileId ? previewWaitingTiles : waitingTiles;
 
   // ローカル状態
   const [canTsumo, setCanTsumo] = useState(false);
@@ -443,13 +459,9 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
               gameState={gameState}
               playerId={playerId}
               onDiscard={handleDiscard}
-              canTsumo={canTsumo}
-              onTsumo={handleTsumo}
-              ronInfo={ronInfo}
-              onRon={handleRon}
-              onSkipRon={handleSkipRon}
               isMyTurn={isMyTurn}
               turnPhase={turnPhase}
+              onTileHover={handleTileHover}
               highQuality={highQuality}
             />
           </Suspense>
@@ -469,12 +481,12 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
         </Canvas>
 
         {/* 待ち牌パネル（2D、手牌の上に表示） */}
-        {waitingTiles.length > 0 && !roundResult && (
+        {displayWaitingTiles.length > 0 && !roundResult && (
           <div className="absolute bottom-[28%] left-1/2 -translate-x-1/2 z-10">
             <div className="bg-black/80 rounded-lg px-3 py-2 flex items-center gap-2 border border-slate-600/50">
               <span className="text-amber-400 text-xs font-bold shrink-0">待ち</span>
               <div className="flex gap-1">
-                {waitingTiles.map((kind) => (
+                {displayWaitingTiles.map((kind) => (
                   <div key={kind} className="w-7 h-9 bg-[#f5f0e1] rounded border border-slate-500 flex items-center justify-center overflow-hidden shadow-md">
                     <img
                       src={getTileImagePath(kind, false)}
@@ -485,6 +497,27 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* アクションボタン（2D、チケット風） */}
+        {!roundResult && (canTsumo || ronInfo) && (
+          <div className="absolute bottom-[16%] left-1/2 -translate-x-1/2 z-10 flex gap-3">
+            {canTsumo && isMyTurn && (
+              <button onClick={handleTsumo} className="ticket-btn ticket-btn-red">
+                ツモ
+              </button>
+            )}
+            {ronInfo && (
+              <>
+                <button onClick={handleRon} className="ticket-btn ticket-btn-red">
+                  ロン
+                </button>
+                <button onClick={handleSkipRon} className="ticket-btn ticket-btn-gray">
+                  見逃し
+                </button>
+              </>
+            )}
           </div>
         )}
 
