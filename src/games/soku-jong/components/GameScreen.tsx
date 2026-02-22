@@ -289,8 +289,9 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
         // Botはツモだけして discard phase へ（auto-discard は別の effect で）
         onUpdateGameState(newState);
       }
+      setTimeout(() => { processingRef.current = false; }, 200);
     } else {
-      // 自分の手番
+      // 自分の手番（即座にロック解除 — 高速打牌でron_checkがブロックされるのを防止）
       setCanTsumo(ct);
       setTsumoScore(ts);
 
@@ -299,9 +300,8 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
         for (const p of gameState.players) timeBankInit[p.id] = initialTime;
       }
       onUpdateGameState({ ...newState, ...(hasTimeLimit ? { timeBank: timeBankInit } : {}) });
+      processingRef.current = false;
     }
-
-    setTimeout(() => { processingRef.current = false; }, 200);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMyTurn, isBotTurn, turnPhase]);
 
@@ -322,7 +322,7 @@ export const GameScreen = ({ gameState, playerId, onBackToLobby, onUpdateGameSta
       const lastTile = bot.hand[bot.hand.length - 1];
       const newState = processDiscard(gameState, currentTurnId, lastTile.id);
       onUpdateGameState(newState);
-      setTimeout(() => { processingRef.current = false; }, 200);
+      processingRef.current = false;
     }, BOT_DELAY);
 
     return () => { clearTimeout(timer); processingRef.current = false; };
