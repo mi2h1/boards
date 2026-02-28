@@ -498,7 +498,7 @@ function App() {
           </div>
 
           {/* 速雀 */}
-          <div className="bg-slate-800/80 rounded-xl overflow-hidden opacity-75">
+          <div className="bg-slate-800/80 rounded-xl overflow-hidden hover:ring-2 hover:ring-emerald-500 transition-all">
             <div className="h-40 bg-gradient-to-br from-emerald-600 to-green-600 flex items-center justify-center">
               <img src="/hive/images/vec_logo_soku-jong.svg" alt="速雀" className="h-16" />
             </div>
@@ -510,10 +510,11 @@ function App() {
               </p>
               <div className="flex gap-2">
                 <button
-                  disabled
-                  className="flex-1 px-4 py-2 bg-slate-600 rounded-lg text-slate-400 font-bold cursor-not-allowed"
+                  onClick={() => selectGame('soku-jong')}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-500
+                    hover:from-emerald-600 hover:to-green-600 rounded-lg text-white font-bold transition-all"
                 >
-                  制作中
+                  遊ぶ
                 </button>
               </div>
             </div>
